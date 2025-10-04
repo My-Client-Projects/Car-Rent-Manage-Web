@@ -60,19 +60,19 @@ export async function updateCar(id, carData) {
 // ----------------------------------------------------------------------
 
 export function useGetPosts() {
-  const URL = endpoints.post.list;
+  const URL = endpoints.car.list;
 
   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
 
   const memoizedValue = useMemo(
     () => ({
-      posts: data?.posts || [],
+      posts: data?.cars || [],
       postsLoading: isLoading,
       postsError: error,
       postsValidating: isValidating,
-      postsEmpty: !isLoading && !data?.posts.length,
+      postsEmpty: !isLoading && !data?.cars.length,
     }),
-    [data?.posts, error, isLoading, isValidating]
+    [data?.cars, error, isLoading, isValidating]
   );
 
   return memoizedValue;

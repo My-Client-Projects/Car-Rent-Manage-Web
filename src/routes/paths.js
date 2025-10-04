@@ -184,5 +184,15 @@ export const paths = {
         edit: `${ROOTS.DASHBOARD}/tour/${MOCK_ID}/edit`,
       },
     },
+    car: {
+      root: `${ROOTS.DASHBOARD}/post`,
+      new: `${ROOTS.DASHBOARD}/post/new`,
+      details: (title) => `${ROOTS.DASHBOARD}/post/${paramCase(title)}`,
+      edit: (title) => `${ROOTS.DASHBOARD}/post/${paramCase(title)}/edit`,
+      demo: {
+        details: `${ROOTS.DASHBOARD}/post/${paramCase(MOCK_TITLE)}`,
+        edit: `${ROOTS.DASHBOARD}/post/${paramCase(MOCK_TITLE)}/edit`,
+      },
+    },
   },
 };

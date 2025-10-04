@@ -25,7 +25,7 @@ import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export default function PostItemHorizontal({ post }) {
+export default function PostItemHorizontal({ car }) {
   const popover = usePopover();
 
   const router = useRouter();
@@ -33,18 +33,19 @@ export default function PostItemHorizontal({ post }) {
   const smUp = useResponsive('up', 'sm');
 
   const {
-    title,
-    author,
-    publish,
-    coverUrl,
+    name,
+    brand,
+    model,
+    year,
+    costPerDay,
+    status,
     createdAt,
+    imageUrl,
+    totalBookings,
     totalViews,
-    totalShares,
-    totalComments,
-    description,
-  } = post;
+  } = car;
 
-  return (
+  return(
     <>
       <Stack component={Card} direction="row">
         <Stack
@@ -53,8 +54,11 @@ export default function PostItemHorizontal({ post }) {
           }}
         >
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-            <Label variant="soft" color={(publish === 'published' && 'info') || 'default'}>
-              {publish}
+            <Label
+              variant="soft"
+              color={(status === 'available' && 'success') || (status === 'unavailable' && 'error') || 'default'}
+            >
+              {status}
             </Label>
 
             <Box component="span" sx={{ typography: 'caption', color: 'text.disabled' }}>
@@ -63,14 +67,18 @@ export default function PostItemHorizontal({ post }) {
           </Stack>
 
           <Stack spacing={1} flexGrow={1}>
-            <Link color="inherit" component={RouterLink} href={paths.dashboard.post.details(title)}>
+            <Link
+              color="inherit"
+              onClick={() => router.push(paths.dashboard.car.details(car._id))}
+              sx={{ cursor: 'pointer' }}
+            >
               <TextMaxLine variant="subtitle2" line={2}>
-                {title}
+                {brand} {model} ({year})
               </TextMaxLine>
             </Link>
 
             <TextMaxLine variant="body2" sx={{ color: 'text.secondary' }}>
-              {description}
+              Charge per day: ${costPerDay}
             </TextMaxLine>
           </Stack>
 
@@ -91,18 +99,13 @@ export default function PostItemHorizontal({ post }) {
               }}
             >
               <Stack direction="row" alignItems="center">
-                <Iconify icon="eva:message-circle-fill" width={16} sx={{ mr: 0.5 }} />
-                {fShortenNumber(totalComments)}
+                <Iconify icon="solar:calendar-bold" width={16} sx={{ mr: 0.5 }} />
+                {fShortenNumber(totalBookings)} bookings
               </Stack>
 
               <Stack direction="row" alignItems="center">
                 <Iconify icon="solar:eye-bold" width={16} sx={{ mr: 0.5 }} />
-                {fShortenNumber(totalViews)}
-              </Stack>
-
-              <Stack direction="row" alignItems="center">
-                <Iconify icon="solar:share-bold" width={16} sx={{ mr: 0.5 }} />
-                {fShortenNumber(totalShares)}
+                {fShortenNumber(totalViews)} views
               </Stack>
             </Stack>
           </Stack>
@@ -119,11 +122,11 @@ export default function PostItemHorizontal({ post }) {
             }}
           >
             <Avatar
-              alt={author.name}
-              src={author.avatarUrl}
+              alt={brand}
+              src={imageUrl}
               sx={{ position: 'absolute', top: 16, right: 16, zIndex: 9 }}
             />
-            <Image alt={title} src={coverUrl} sx={{ height: 1, borderRadius: 1.5 }} />
+            <Image alt={name} src={imageUrl} sx={{ height: 1, borderRadius: 1.5 }} />
           </Box>
         )}
       </Stack>
@@ -137,7 +140,7 @@ export default function PostItemHorizontal({ post }) {
         <MenuItem
           onClick={() => {
             popover.onClose();
-            router.push(paths.dashboard.post.details(title));
+            router.push(paths.dashboard.car.details(car._id));
           }}
         >
           <Iconify icon="solar:eye-bold" />
@@ -147,7 +150,7 @@ export default function PostItemHorizontal({ post }) {
         <MenuItem
           onClick={() => {
             popover.onClose();
-            router.push(paths.dashboard.post.edit(title));
+            router.push(paths.dashboard.car.edit(car._id));
           }}
         >
           <Iconify icon="solar:pen-bold" />
@@ -165,19 +168,144 @@ export default function PostItemHorizontal({ post }) {
         </MenuItem>
       </CustomPopover>
     </>
-  );
+  )
+
+  // return (
+  //   <>
+  //     <Stack component={Card} direction="row">
+  //       <Stack
+  //         sx={{
+  //           p: (theme) => theme.spacing(3, 3, 2, 3),
+  //         }}
+  //       >
+  //         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+  //           <Label variant="soft" color={(publish === 'published' && 'info') || 'default'}>
+  //             {publish}
+  //           </Label>
+
+  //           <Box component="span" sx={{ typography: 'caption', color: 'text.disabled' }}>
+  //             {fDate(createdAt)}
+  //           </Box>
+  //         </Stack>
+
+  //         <Stack spacing={1} flexGrow={1}>
+  //           <Link color="inherit" component={RouterLink} href={paths.dashboard.post.details(title)}>
+  //             <TextMaxLine variant="subtitle2" line={2}>
+  //               {title}
+  //             </TextMaxLine>
+  //           </Link>
+
+  //           <TextMaxLine variant="body2" sx={{ color: 'text.secondary' }}>
+  //             {description}
+  //           </TextMaxLine>
+  //         </Stack>
+
+  //         <Stack direction="row" alignItems="center">
+  //           <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+  //             <Iconify icon="eva:more-horizontal-fill" />
+  //           </IconButton>
+
+  //           <Stack
+  //             spacing={1.5}
+  //             flexGrow={1}
+  //             direction="row"
+  //             flexWrap="wrap"
+  //             justifyContent="flex-end"
+  //             sx={{
+  //               typography: 'caption',
+  //               color: 'text.disabled',
+  //             }}
+  //           >
+  //             <Stack direction="row" alignItems="center">
+  //               <Iconify icon="eva:message-circle-fill" width={16} sx={{ mr: 0.5 }} />
+  //               {fShortenNumber(totalComments)}
+  //             </Stack>
+
+  //             <Stack direction="row" alignItems="center">
+  //               <Iconify icon="solar:eye-bold" width={16} sx={{ mr: 0.5 }} />
+  //               {fShortenNumber(totalViews)}
+  //             </Stack>
+
+  //             <Stack direction="row" alignItems="center">
+  //               <Iconify icon="solar:share-bold" width={16} sx={{ mr: 0.5 }} />
+  //               {fShortenNumber(totalShares)}
+  //             </Stack>
+  //           </Stack>
+  //         </Stack>
+  //       </Stack>
+
+  //       {smUp && (
+  //         <Box
+  //           sx={{
+  //             width: 180,
+  //             height: 240,
+  //             position: 'relative',
+  //             flexShrink: 0,
+  //             p: 1,
+  //           }}
+  //         >
+  //           <Avatar
+  //             alt={author.name}
+  //             src={author.avatarUrl}
+  //             sx={{ position: 'absolute', top: 16, right: 16, zIndex: 9 }}
+  //           />
+  //           <Image alt={title} src={coverUrl} sx={{ height: 1, borderRadius: 1.5 }} />
+  //         </Box>
+  //       )}
+  //     </Stack>
+
+  //     <CustomPopover
+  //       open={popover.open}
+  //       onClose={popover.onClose}
+  //       arrow="bottom-center"
+  //       sx={{ width: 140 }}
+  //     >
+  //       <MenuItem
+  //         onClick={() => {
+  //           popover.onClose();
+  //           router.push(paths.dashboard.post.details(title));
+  //         }}
+  //       >
+  //         <Iconify icon="solar:eye-bold" />
+  //         View
+  //       </MenuItem>
+
+  //       <MenuItem
+  //         onClick={() => {
+  //           popover.onClose();
+  //           router.push(paths.dashboard.post.edit(title));
+  //         }}
+  //       >
+  //         <Iconify icon="solar:pen-bold" />
+  //         Edit
+  //       </MenuItem>
+
+  //       <MenuItem
+  //         onClick={() => {
+  //           popover.onClose();
+  //         }}
+  //         sx={{ color: 'error.main' }}
+  //       >
+  //         <Iconify icon="solar:trash-bin-trash-bold" />
+  //         Delete
+  //       </MenuItem>
+  //     </CustomPopover>
+  //   </>
+  // );
 }
 
 PostItemHorizontal.propTypes = {
-  post: PropTypes.shape({
-    author: PropTypes.object,
-    coverUrl: PropTypes.string,
+    car: PropTypes.shape({
+    _id: PropTypes.string,
+    name: PropTypes.string,
+    brand: PropTypes.string,
+    model: PropTypes.string,
+    year: PropTypes.number,
+    costPerDay: PropTypes.number,
+    status: PropTypes.string,
     createdAt: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
-    description: PropTypes.string,
-    publish: PropTypes.string,
-    title: PropTypes.string,
-    totalComments: PropTypes.number,
-    totalShares: PropTypes.number,
+    imageUrl: PropTypes.string,
+    totalBookings: PropTypes.number,
     totalViews: PropTypes.number,
   }),
 };

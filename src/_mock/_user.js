@@ -11,6 +11,12 @@ export const USER_STATUS_OPTIONS = [
   { value: 'rejected', label: 'Rejected' },
 ];
 
+export const USER_ROLE_OPTIONS = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'user', label: 'User / Customer' },
+];
+
 export const _userAbout = {
   id: _mock.id(1),
   role: _mock.role(1),

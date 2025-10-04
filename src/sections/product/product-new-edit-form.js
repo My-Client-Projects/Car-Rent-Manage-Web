@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -46,455 +47,169 @@ import { maxHeight, width } from '@mui/system';
 
 // ----------------------------------------------------------------------
 
-export default function ProductNewEditForm({ currentCar }) {
+export default function ProductNewEditForm({ currentBooking, cars, customers }) {
   const router = useRouter();
-
-  const mdUp = useResponsive('up', 'md');
-
   const { enqueueSnackbar } = useSnackbar();
 
-  const [includeTaxes, setIncludeTaxes] = useState(false);
-
-  const NewProductSchema = Yup.object().shape({
-    name: Yup.string().required('Name is required'),
-    images: Yup.array().min(1, 'Images is required'),
-    tags: Yup.array().min(2, 'Must have at least 2 tags'),
-    category: Yup.string().required('Category is required'),
-    price: Yup.number().moreThan(0, 'Price should not be $0.00'),
-    description: Yup.string().required('Description is required'),
-    // not required
-    taxes: Yup.number(),
-    newLabel: Yup.object().shape({
-      enabled: Yup.boolean(),
-      content: Yup.string(),
-    }),
-    saleLabel: Yup.object().shape({
-      enabled: Yup.boolean(),
-      content: Yup.string(),
-    }),
+  const NewBookingSchema = Yup.object().shape({
+    carId: Yup.string().required('Car is required'),
+    customerId: Yup.string().required('Customer is required'),
+    startDate: Yup.date().required('Start date is required'),
+    endDate: Yup.date()
+      .required('End date is required')
+      .min(Yup.ref('startDate'), 'End date must be after start date'),
+    totalAmount: Yup.number().required('Total amount is required').min(0, 'Must be positive'),
+    status: Yup.string().required('Status is required'),
   });
 
   const defaultValues = useMemo(
     () => ({
-      brand: currentCar?.brand || '',
-      description: currentCar?.description || '',
-      subDescription: currentCar?.subDescription || '',
-      images: currentCar?.images || [],
-      //
-      code: currentCar?.code || '',
-      sku: currentCar?.sku || '',
-      price: currentCar?.price || 0,
-      quantity: currentCar?.quantity || 0,
-      priceSale: currentCar?.priceSale || 0,
-      tags: currentCar?.tags || [],
-      taxes: currentCar?.taxes || 0,
-      fuelType: currentCar?.fuelType || '',
-      model: currentCar?.model || '',
-      colors: currentCar?.colors || [],
-      seats: currentCar?.seats || [],
-      status: currentCar?.status,
-      // newLabel: currentCar?.newLabel || { enabled: false, content: '' },
-      // saleLabel: currentCar?.saleLabel || { enabled: false, content: '' },
+      carId: currentBooking?.carId || '',
+      customerId: currentBooking?.customerId || '',
+      startDate: currentBooking?.startDate || null,
+      endDate: currentBooking?.endDate || null,
+      totalAmount: currentBooking?.totalAmount || 0,
+      status: currentBooking?.status || 'pending',
     }),
-    [currentCar]
+    [currentBooking]
   );
 
   const methods = useForm({
-    resolver: yupResolver(NewProductSchema),
+    resolver: yupResolver(NewBookingSchema),
     defaultValues,
   });
 
   const {
     reset,
-    watch,
-    setValue,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
 
-  const values = watch();
-
   useEffect(() => {
-    if (currentCar) {
+    if (currentBooking) {
       reset(defaultValues);
     }
-  }, [currentCar, defaultValues, reset]);
-
-  useEffect(() => {
-    if (includeTaxes) {
-      setValue('taxes', 0);
-    } else {
-      setValue('taxes', currentCar?.taxes || 0);
-    }
-  }, [currentCar?.taxes, includeTaxes, setValue]);
+  }, [currentBooking, defaultValues, reset]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      enqueueSnackbar(currentBooking ? 'Booking updated successfully!' : 'Booking created successfully!');
       reset();
-      enqueueSnackbar(currentCar ? 'Update success!' : 'Create success!');
-      router.push(paths.dashboard.product.root);
-      console.info('DATA', data);
+      router.push(paths.dashboard.booking.root);
+
+      console.info('BOOKING DATA', data);
     } catch (error) {
       console.error(error);
     }
   });
 
-  const handleDrop = useCallback(
-    (acceptedFiles) => {
-      const files = values.images || [];
-
-      const newFiles = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-      );
-
-      setValue('images', [...files, ...newFiles], { shouldValidate: true });
-    },
-    [setValue, values.images]
-  );
-
-  const handleRemoveFile = useCallback(
-    (inputFile) => {
-      const filtered = values.images && values.images?.filter((file) => file !== inputFile);
-      setValue('images', filtered);
-    },
-    [setValue, values.images]
-  );
-
-  const handleRemoveAllFiles = useCallback(() => {
-    setValue('images', []);
-  }, [setValue]);
-
-  const handleChangeIncludeTaxes = useCallback((event) => {
-    setIncludeTaxes(event.target.checked);
-  }, []);
-
-  const renderDetails = (
-    <>
-      {mdUp && (
-        <Grid md={4}>
-          <Typography variant="h6" sx={{ mb: 0.5 }}>
-            Details
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Brand, model description, image...
-          </Typography>
-        </Grid>
-      )}
-
-      <Grid xs={12} md={8}>
-        <Card>
-          {!mdUp && <CardHeader title="Details" />}
-
-          <Stack spacing={3} sx={{ p: 3 }}>
-            <RHFTextField name="brand" label="Brand" />
-
-            {/* <RHFTextField name="model" label="Model" /> */}
-
-              <RHFSelect native name="model" label="Model" InputLabelProps={{ shrink: true }}>
-                {CAR_MODEL_OPTIONS.map((category) => (
-                  <optgroup key={category.group} label={category.group}>
-                    {category.classify.map((classify) => (
-                      <option key={classify} value={classify}>
-                        {classify}
-                      </option>
-                    ))}
-                  </optgroup>
+  return (
+    <FormProvider methods={methods} onSubmit={onSubmit}>
+      <Grid container spacing={3}>
+        {/* Booking Details */}
+        <Grid xs={12} md={8}>
+          <Card>
+            <CardHeader title="Booking Details" />
+            <Stack spacing={3} sx={{ p: 3 }}>
+              {/* Select Car */}
+              <RHFSelect name="carId" label="Car">
+                <option value="" />
+                {cars?.map((car) => (
+                  <option key={car.id} value={car.id}>
+                    {car.brand} {car.model} ({car.registrationNumber})
+                  </option>
                 ))}
               </RHFSelect>
 
-            <RHFTextField name="subDescription" label="Sub Description" multiline rows={4} />
+              {/* Select Customer */}
+              <RHFSelect name="customerId" label="Customer">
+                <option value="" />
+                {customers?.map((cust) => (
+                  <option key={cust.id} value={cust.id}>
+                    {cust.name} ({cust.email})
+                  </option>
+                ))}
+              </RHFSelect>
 
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle2">Content</Typography>
-              <RHFEditor simple name="description" />
-            </Stack>
-
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle2">Images</Typography>
-              <RHFUpload
-                multiple
-                thumbnail
-                name="images"
-                maxSize={3145728}
-                onDrop={handleDrop}
-                onRemove={handleRemoveFile}
-                onRemoveAll={handleRemoveAllFiles}
-                onUpload={() => console.info('ON UPLOAD')}
-              />
-            </Stack>
-          </Stack>
-        </Card>
-      </Grid>
-    </>
-  );
-
-  const renderProperties = (
-    <>
-      {mdUp && (
-        <Grid md={4}>
-          <Typography variant="h6" sx={{ mb: 0.5 }}>
-            Properties
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Additional functions and attributes...
-          </Typography>
-        </Grid>
-      )}
-
-      <Grid xs={12} md={8}>
-        <Card>
-          {!mdUp && <CardHeader title="Properties" />}
-
-          <Stack spacing={3} sx={{ p: 3 }}>
-            <Box
-              columnGap={2}
-              rowGap={3}
-              display="grid"
-              gridTemplateColumns={{
-                xs: 'repeat(1, 1fr)',
-                md: 'repeat(2, 1fr)',
-              }}
-            >
-
-              <RHFTextField name="year" label="Year" />
-
-              <RHFTextField name="registrationNumber" label="Registration Number" />
-
-              <RHFTextField name="transmission" label="Transmission" />
-
-              <RHFMultiSelect
-                checkbox
-                name="colors"
-                label="Colors"
-                options={CAR_COLOR_OPTIONS}
-              />
-
-              <RHFMultiSelect checkbox name="seats" label="Seats" options={CAR_SEAT_OPTIONS} />
-
-               <Stack spacing={1}>
-                <Typography variant="subtitle2">Fuel Type</Typography>
-                <RHFMultiCheckbox row name="fuelType" spacing={2} options={CAR_FUEL_OPTIONS} />
-              </Stack>
-            </Box>
-
-            {/* <RHFAutocomplete
-              name="tags"
-              label="Tags"
-              placeholder="+ Tags"
-              multiple
-              freeSolo
-              options={_tags.map((option) => option)}
-              getOptionLabel={(option) => option}
-              renderOption={(props, option) => (
-                <li {...props} key={option}>
-                  {option}
-                </li>
-              )}
-              renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option}
-                    label={option}
-                    size="small"
-                    color="info"
-                    variant="soft"
+              {/* Start Date */}
+              <Controller
+                name="startDate"
+                control={methods.control}
+                render={({ field, fieldState: { error } }) => (
+                  <DatePicker
+                    label="Start date"
+                    value={field.value}
+                    onChange={(newValue) => field.onChange(newValue)}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !!error,
+                        helperText: error?.message,
+                      },
+                    }}
                   />
-                ))
-              }
-            /> */}
+                )}
+              />
 
-            <Divider sx={{ borderStyle: 'dashed' }} />
+              <Controller
+                name="endDate"
+                control={methods.control}
+                render={({ field, fieldState: { error } }) => (
+                  <DatePicker
+                    label="End date"
+                    value={field.value}
+                    onChange={(newValue) => field.onChange(newValue)}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !!error,
+                        helperText: error?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
 
-            
-          </Stack>
-        </Card>
-      </Grid>
-    </>
-  );
-
-  const renderPricing = (
-    <>
-      {mdUp && (
-        <Grid md={4}>
-          <Typography variant="h6" sx={{ mb: 0.5 }}>
-            Rental Pricing
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Define the pricing structure for this vehicle
-          </Typography>
-        </Grid>
-      )}
-
-      <Grid xs={12} md={8}>
-        <Card>
-          {!mdUp && <CardHeader title="Rental Pricing" />}
-
-          <Stack spacing={3} sx={{ p: 3 }}>
-            {/* Per Day Cost */}
-            <RHFTextField
-              name="costPerDay"
-              label="Cost Per Day"
-              placeholder="0.00"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      $
-                    </Box>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Free Mileage Per Day */}
-            <RHFTextField
-              name="mileagePerDay"
-              label="Free Mileage Per Day"
-              placeholder="e.g. 100"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      km
-                    </Box>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Extra Mileage Charge */}
-            <RHFTextField
-              name="extraMileageCharge"
-              label="Extra Mileage Charge"
-              placeholder="0.00"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      $/km
-                    </Box>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Deposit Amount */}
-            <RHFTextField
-              name="depositAmount"
-              label="Deposit Amount"
-              placeholder="0.00"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      $
-                    </Box>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Insurance Cost */}
-            <RHFTextField
-              name="insuranceCost"
-              label="Insurance Cost (Optional)"
-              placeholder="0.00"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      $
-                    </Box>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Tax Toggle */}
-            {/* <FormControlLabel
-              control={<Switch checked={includeTaxes} onChange={handleChangeIncludeTaxes} />}
-              label="Price includes taxes"
-            />
-
-            {!includeTaxes && (
+              {/* Total Amount */}
               <RHFTextField
-                name="taxes"
-                label="Tax (%)"
-                placeholder="0.00"
+                name="totalAmount"
+                label="Total Amount"
                 type="number"
-                InputLabelProps={{ shrink: true }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Box component="span" sx={{ color: 'text.disabled' }}>
-                        %
-                      </Box>
+                      $
                     </InputAdornment>
                   ),
                 }}
               />
-            )} */}
-          </Stack>
-        </Card>
-      </Grid>
-    </>
-  );
 
+              {/* Status */}
+              <RHFSelect name="status" label="Status">
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </RHFSelect>
+            </Stack>
+          </Card>
+        </Grid>
 
-  const renderActions = (
-    <>
-      {mdUp && <Grid md={4} />}
-      <Grid xs={12} md={8} sx={{ display: 'flex', alignItems: 'center', justifyContent:'space-between' }}>
-        {/* <FormControlLabel
-          control={<Switch defaultChecked />}
-          label="Publish"
-          sx={{ flexGrow: 1, pl: 3 }}
-        /> */}
-
-        <RHFSelect native name="status" label="Status" InputLabelProps={{ shrink: true }} sx={{width:'50%'}}>
-          {CAR_STATUS_OPTIONS.map((status) => (
-             <option key={status.value} value={status.value}>
-                  {status.label}
-              </option>
-          ))}
-        </RHFSelect>
-
-        <LoadingButton type="submit" variant="contained" size="large" loading={isSubmitting}>
-          {!currentCar ? 'Add Car' : 'Save Car'}
-        </LoadingButton>
-      </Grid>
-    </>
-  );
-
-  return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Grid container spacing={3}>
-        {renderDetails}
-
-        {renderProperties}
-
-        {renderPricing}
-
-        {renderActions}
+        {/* Actions */}
+        <Grid xs={12} md={8} display="flex" justifyContent="flex-end">
+          <LoadingButton type="submit" variant="contained" size="large" loading={isSubmitting}>
+            {!currentBooking ? 'Add Booking' : 'Save Booking'}
+          </LoadingButton>
+        </Grid>
       </Grid>
     </FormProvider>
   );
 }
 
 ProductNewEditForm.propTypes = {
-  currentCar: PropTypes.object,
+  currentBooking: PropTypes.object,
+  cars: PropTypes.array,
+  customers: PropTypes.array,
 };

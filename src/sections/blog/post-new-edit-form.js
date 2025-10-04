@@ -134,7 +134,7 @@ export default function PostNewEditForm({ currentCar }) {
         await addNewCar(data);
         enqueueSnackbar('Create success!');
       }
-      reset();
+      // reset();
       enqueueSnackbar(currentCar ? 'Update success!' : 'Create success!');
       router.push(paths.dashboard.post.root);
     } catch (error) {

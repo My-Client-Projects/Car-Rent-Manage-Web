@@ -36,6 +36,13 @@ export const CAR_STATUS_OPTIONS = [
   { label: 'Maintainence', value: 'maintenance', color:'warning' },
 ]
 
+export const CAR_STATUS = [
+  'available',
+  'not available', 
+  'booked',
+  'maintenance', 
+]
+
 export const CAR_SEAT_OPTIONS = [
   { value: '4', label: '4' },
   { value: '6', label: '6' },

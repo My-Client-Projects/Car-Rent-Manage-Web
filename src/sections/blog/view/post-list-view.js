@@ -15,6 +15,7 @@ import { RouterLink } from 'src/routes/components';
 import { useDebounce } from 'src/hooks/use-debounce';
 
 import { POST_SORT_OPTIONS } from 'src/_mock';
+import { CAR_STATUS } from 'src/_mock/_fleetCar';
 import { useGetPosts, useSearchPosts } from 'src/api/blog';
 
 import Label from 'src/components/label';
@@ -29,7 +30,7 @@ import PostListHorizontal from '../post-list-horizontal';
 // ----------------------------------------------------------------------
 
 const defaultFilters = {
-  publish: 'all',
+  status: 'available',
 };
 
 // ----------------------------------------------------------------------
@@ -72,7 +73,7 @@ export default function PostListView() {
 
   const handleFilterPublish = useCallback(
     (event, newValue) => {
-      handleFilters('publish', newValue);
+      handleFilters('status', newValue);
     },
     [handleFilters]
   );
@@ -101,7 +102,7 @@ export default function PostListView() {
             variant="contained"
             startIcon={<Iconify icon="mingcute:add-line" />}
           >
-            New Post
+            Add New Car
           </Button>
         }
         sx={{
@@ -130,13 +131,13 @@ export default function PostListView() {
       </Stack>
 
       <Tabs
-        value={filters.publish}
+        value={filters.status}
         onChange={handleFilterPublish}
         sx={{
           mb: { xs: 3, md: 5 },
         }}
       >
-        {['all', 'published', 'draft'].map((tab) => (
+        {CAR_STATUS.map((tab) => (
           <Tab
             key={tab}
             iconPosition="end"
@@ -144,14 +145,18 @@ export default function PostListView() {
             label={tab}
             icon={
               <Label
-                variant={((tab === 'all' || tab === filters.publish) && 'filled') || 'soft'}
-                color={(tab === 'published' && 'info') || 'default'}
+                variant={((tab === 'available' || tab === filters.status) && 'filled') || 'soft'}
+                color={(tab === 'available' && 'success') || (tab === 'not available' && 'info') || (tab === 'booked' && 'error') || (tab === 'maintenance' && 'warning') || 'default'}
               >
-                {tab === 'all' && posts.length}
+                {/* {tab === 'available' && posts.length} */}
 
-                {tab === 'published' && posts.filter((post) => post.publish === 'published').length}
+                {tab === 'available' && posts.filter((post) => post.status === 'available').length}
 
-                {tab === 'draft' && posts.filter((post) => post.publish === 'draft').length}
+                {tab === 'booked' && posts.filter((post) => post.status === 'booked').length}
+
+                {tab === 'maintenance' && posts.filter((post) => post.status === 'maintenance').length}
+
+                {tab === 'not available' && posts.filter((post) => post.status === 'notavailable').length}
               </Label>
             }
             sx={{ textTransform: 'capitalize' }}
@@ -167,7 +172,8 @@ export default function PostListView() {
 // ----------------------------------------------------------------------
 
 const applyFilter = ({ inputData, filters, sortBy }) => {
-  const { publish } = filters;
+
+  const { status  } = filters;
 
   if (sortBy === 'latest') {
     inputData = orderBy(inputData, ['createdAt'], ['desc']);
@@ -181,8 +187,8 @@ const applyFilter = ({ inputData, filters, sortBy }) => {
     inputData = orderBy(inputData, ['totalViews'], ['desc']);
   }
 
-  if (publish !== 'all') {
-    inputData = inputData.filter((post) => post.publish === publish);
+  if (status) {
+    inputData = inputData.filter((post) => post.status === status);
   }
 
   return inputData;

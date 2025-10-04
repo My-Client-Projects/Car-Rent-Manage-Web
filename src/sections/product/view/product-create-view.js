@@ -4,6 +4,8 @@ import Container from '@mui/material/Container';
 
 import { paths } from 'src/routes/paths';
 
+import { useGetPosts } from 'src/api/blog';
+
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
@@ -13,6 +15,8 @@ import ProductNewEditForm from '../product-new-edit-form';
 
 export default function ProductCreateView() {
   const settings = useSettingsContext();
+
+  const { posts, postsLoading } = useGetPosts();
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -34,7 +38,7 @@ export default function ProductCreateView() {
         }}
       />
 
-      <ProductNewEditForm />
+      <ProductNewEditForm cars={posts}/>
     </Container>
   );
 }

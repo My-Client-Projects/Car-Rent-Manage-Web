@@ -58,4 +58,11 @@ export const endpoints = {
     update: '/api/car?endpoint=update',
     search: '/api/car/search',
   },
+  user: {
+    add: '/api/user?endpoint=add',
+    list: '/api/user?endpoint=list',
+    details: '/api/user?endpoint=details',
+    update: '/api/user?endpoint=update',
+    search: '/api/user?endpoint=search',
+  },
 };

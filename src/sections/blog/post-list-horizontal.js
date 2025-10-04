@@ -20,7 +20,7 @@ export default function PostListHorizontal({ posts, loading }) {
   const renderList = (
     <>
       {posts.map((post) => (
-        <PostItemHorizontal key={post.id} post={post} />
+        <PostItemHorizontal key={post._id} car={post} />
       ))}
     </>
   );

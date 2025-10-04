@@ -28,7 +28,11 @@ import FormProvider, {
   RHFTextField,
   RHFUploadAvatar,
   RHFAutocomplete,
+  RHFSelect,
 } from 'src/components/hook-form';
+import { addNewUser, updateUser } from 'src/api/user';
+import { CAR_STATUS_OPTIONS } from 'src/_mock/_fleetCar';
+import { USER_ROLE_OPTIONS, USER_STATUS_OPTIONS } from 'src/_mock';
 
 // ----------------------------------------------------------------------
 
@@ -42,11 +46,13 @@ export default function UserNewEditForm({ currentUser }) {
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),
     phoneNumber: Yup.string().required('Phone number is required'),
     address: Yup.string().required('Address is required'),
+    nic: Yup.string().required('NIC is required'),
+    licence: Yup.string().required('Licence is required'),
     country: Yup.string().required('Country is required'),
     company: Yup.string().required('Company is required'),
     state: Yup.string().required('State is required'),
     city: Yup.string().required('City is required'),
-    role: Yup.string().required('Role is required'),
+    // role: Yup.string().required('Role is required'),
     zipCode: Yup.string().required('Zip code is required'),
     avatarUrl: Yup.mixed().nullable().required('Avatar is required'),
     // not required
@@ -58,7 +64,9 @@ export default function UserNewEditForm({ currentUser }) {
     () => ({
       name: currentUser?.name || '',
       city: currentUser?.city || '',
-      role: currentUser?.role || '',
+      role: currentUser?.role || 'user',
+      nic: currentUser?.nic || '',
+      licence: currentUser?.licence || '',
       email: currentUser?.email || '',
       state: currentUser?.state || '',
       status: currentUser?.status || '',
@@ -76,6 +84,7 @@ export default function UserNewEditForm({ currentUser }) {
   const methods = useForm({
     resolver: yupResolver(NewUserSchema),
     defaultValues,
+    values:{'role':'user'}
   });
 
   const {
@@ -91,11 +100,17 @@ export default function UserNewEditForm({ currentUser }) {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      reset();
+      if (currentUser) {
+        const {_id} = currentUser
+        await updateUser(_id,data);
+        enqueueSnackbar('Update success!');
+      } else {
+        await addNewUser(data);
+        enqueueSnackbar('Create success!');
+      }
+      // reset();
       enqueueSnackbar(currentUser ? 'Update success!' : 'Create success!');
       router.push(paths.dashboard.user.list);
-      console.info('DATA', data);
     } catch (error) {
       console.error(error);
     }
@@ -110,7 +125,7 @@ export default function UserNewEditForm({ currentUser }) {
       });
 
       if (file) {
-        setValue('avatarUrl', newFile, { shouldValidate: true });
+        setValue('avatarUrl', newFile.preview, { shouldValidate: true });
       }
     },
     [setValue]
@@ -230,6 +245,9 @@ export default function UserNewEditForm({ currentUser }) {
               <RHFTextField name="email" label="Email Address" />
               <RHFTextField name="phoneNumber" label="Phone Number" />
 
+              <RHFTextField name="nic" label="NIC Number" />
+              <RHFTextField name="licence" label="Licence Number" />
+
               <RHFAutocomplete
                 name="country"
                 type="country"
@@ -244,8 +262,16 @@ export default function UserNewEditForm({ currentUser }) {
               <RHFTextField name="city" label="City" />
               <RHFTextField name="address" label="Address" />
               <RHFTextField name="zipCode" label="Zip/Code" />
-              <RHFTextField name="company" label="Company" />
-              <RHFTextField name="role" label="Role" />
+              <RHFTextField name="company" label="Occupation" />
+              {/* <RHFTextField name="role" label="Role" /> */}
+
+              <RHFSelect native name="status" label="Status" InputLabelProps={{ shrink: true }} sx={{width:'50%'}}>
+                {USER_STATUS_OPTIONS.map((status) => (
+                    <option key={status.value} value={status.value}>
+                        {status.label}
+                    </option>
+                ))}
+              </RHFSelect>
             </Box>
 
             <Stack alignItems="flex-end" sx={{ mt: 3 }}>
