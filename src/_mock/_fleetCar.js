@@ -55,24 +55,14 @@ export const CAR_SEAT_OPTIONS = [
 
 
 export const CAR_MODEL_OPTIONS = [
-  {
-    group: 'Economy',
-    classify: ['Toyota Corolla', 'Honda Civic', 'Nissan Sunny', 'Hyundai Accent', 'Suzuki Swift'],
-  },
-  {
-    group: 'SUV',
-    classify: ['Toyota RAV4', 'Honda CR-V', 'Nissan X-Trail', 'Hyundai Tucson', 'Mitsubishi Outlander'],
-  },
-  {
-    group: 'Luxury',
-    classify: ['BMW 5 Series', 'Mercedes-Benz E-Class', 'Audi A6', 'Lexus ES', 'Jaguar XF'],
-  },
-  {
-    group: 'Van/MPV',
-    classify: ['Toyota Hiace', 'Nissan Serena', 'Honda Odyssey', 'Kia Carnival', 'Hyundai Staria'],
-  },
-  {
-    group: 'Pickup/4x4',
-    classify: ['Toyota Hilux', 'Ford Ranger', 'Nissan Navara', 'Isuzu D-Max', 'Mitsubishi L200'],
-  },
+
+  'Toyota Corolla', 
+  'Honda Civic', 
+  'Nissan Sunny', 
+  'Hyundai Accent', 
+  'Suzuki Swift',
+  'Toyota RAV4', 'Honda CR-V', 'Nissan X-Trail', 'Hyundai Tucson', 'Mitsubishi Outlander',
+  'BMW 5 Series', 'Mercedes-Benz E-Class', 'Audi A6', 'Lexus ES', 'Jaguar XF',
+  'Toyota Hiace', 'Nissan Serena', 'Honda Odyssey', 'Kia Carnival', 'Hyundai Staria',
+  'Toyota Hilux', 'Ford Ranger', 'Nissan Navara', 'Isuzu D-Max', 'Mitsubishi L200',
 ];

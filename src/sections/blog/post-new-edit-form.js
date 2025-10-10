@@ -84,7 +84,7 @@ export default function PostNewEditForm({ currentCar }) {
       tags: currentCar?.tags || [],
       taxes: currentCar?.taxes || 0,
       fuelType: currentCar?.fuelType || '',
-      model: currentCar?.model || '',
+      carModel: currentCar?.carModel || '',
       colors: currentCar?.colors || [],
       seats: currentCar?.seats || [],
       status: currentCar?.status,
@@ -195,16 +195,13 @@ export default function PostNewEditForm({ currentCar }) {
 
             {/* <RHFTextField name="model" label="Model" /> */}
 
-              <RHFSelect native name="model" label="Model" InputLabelProps={{ shrink: true }}>
+              <RHFSelect native name="carModel" label="Model" InputLabelProps={{ shrink: true }}>
                 {CAR_MODEL_OPTIONS.map((category) => (
-                  <optgroup key={category.group} label={category.group}>
-                    {category.classify.map((classify) => (
-                      <option key={classify} value={classify}>
-                        {classify}
+                      <option key={category} value={category}>
+                        {category}
                       </option>
-                    ))}
-                  </optgroup>
                 ))}
+                
               </RHFSelect>
 
             <RHFTextField name="subDescription" label="Sub Description" multiline rows={4} />

@@ -23,6 +23,14 @@ export default function UserTableToolbar({
   //
   roleOptions,
 }) {
+
+  function capitalizeFirstLetter(text = '') {
+    if (!text) return '';
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+
+
   const popover = usePopover();
 
   const handleFilterName = useCallback(
@@ -79,7 +87,7 @@ export default function UserTableToolbar({
             {roleOptions.map((option) => (
               <MenuItem key={option} value={option}>
                 <Checkbox disableRipple size="small" checked={filters.role.includes(option)} />
-                {option}
+                  {capitalizeFirstLetter(option)}
               </MenuItem>
             ))}
           </Select>

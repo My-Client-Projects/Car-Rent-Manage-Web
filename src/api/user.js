@@ -65,11 +65,11 @@ export function useGetUsers() {
 
   const memoizedValue = useMemo(
     () => ({
-      posts: data?.users || [],
-      postsLoading: isLoading,
-      postsError: error,
-      postsValidating: isValidating,
-      postsEmpty: !isLoading && !data?.users.length,
+      users: data?.users || [],
+      usersLoading: isLoading,
+      usersError: error,
+      usersValidating: isValidating,
+      usersEmpty: !isLoading && !data?.users.length,
     }),
     [data?.users, error, isLoading, isValidating]
   );

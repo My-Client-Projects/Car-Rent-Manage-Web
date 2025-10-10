@@ -1,7 +1,7 @@
 'use client';
 
 import isEqual from 'lodash/isEqual';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -21,7 +21,8 @@ import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { _roles, _userList, USER_STATUS_OPTIONS } from 'src/_mock';
+import { useGetUsers } from 'src/api/user';
+import { _rentCarRoles, USER_STATUS_OPTIONS } from 'src/_mock';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -29,6 +30,7 @@ import Scrollbar from 'src/components/scrollbar';
 import { useSnackbar } from 'src/components/snackbar';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { useSettingsContext } from 'src/components/settings';
+import { LoadingScreen } from 'src/components/loading-screen';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import {
   useTable,
@@ -67,7 +69,10 @@ const defaultFilters = {
 // ----------------------------------------------------------------------
 
 export default function UserListView() {
+
   const { enqueueSnackbar } = useSnackbar();
+
+   const { users, usersLoading } = useGetUsers()
 
   const table = useTable();
 
@@ -77,7 +82,7 @@ export default function UserListView() {
 
   const confirm = useBoolean();
 
-  const [tableData, setTableData] = useState(_userList);
+  const [tableData, setTableData] = useState([]);
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -115,7 +120,7 @@ export default function UserListView() {
 
   const handleDeleteRow = useCallback(
     (id) => {
-      const deleteRow = tableData.filter((row) => row.id !== id);
+      const deleteRow = tableData.filter((row) => row._id !== id);
 
       enqueueSnackbar('Delete success!');
 
@@ -127,7 +132,7 @@ export default function UserListView() {
   );
 
   const handleDeleteRows = useCallback(() => {
-    const deleteRows = tableData.filter((row) => !table.selected.includes(row.id));
+    const deleteRows = tableData.filter((row) => !table.selected.includes(row._id));
 
     enqueueSnackbar('Delete success!');
 
@@ -152,6 +157,21 @@ export default function UserListView() {
     },
     [handleFilters]
   );
+
+  useEffect(() => {
+    if (users.length) {
+      setTableData(users);
+    }
+  }, [users]);
+
+  function renderLoading() {
+      <LoadingScreen
+        sx={{
+          borderRadius: 1.5,
+          bgcolor: 'background.default',
+        }}
+      />
+  };
 
   return (
     <>
@@ -218,7 +238,7 @@ export default function UserListView() {
             filters={filters}
             onFilters={handleFilters}
             //
-            roleOptions={_roles}
+            roleOptions={_rentCarRoles}
           />
 
           {canReset && (
@@ -233,7 +253,11 @@ export default function UserListView() {
             />
           )}
 
-          <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+          {usersLoading ? (
+            renderLoading()
+          )  : (
+
+            <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
             <TableSelectedAction
               dense={table.dense}
               numSelected={table.selected.length}
@@ -296,7 +320,12 @@ export default function UserListView() {
                 </TableBody>
               </Table>
             </Scrollbar>
+
           </TableContainer>
+
+          )}
+
+          
 
           <TablePaginationCustom
             count={dataFiltered.length}
