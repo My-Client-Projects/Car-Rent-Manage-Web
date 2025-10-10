@@ -54,29 +54,58 @@ export default function UserNewEditForm({ currentUser }) {
     city: Yup.string().required('City is required'),
     // role: Yup.string().required('Role is required'),
     zipCode: Yup.string().required('Zip code is required'),
-    avatarUrl: Yup.mixed().nullable().required('Avatar is required'),
+    // avatarUrl: Yup.mixed().nullable().required('Avatar is required'),
     // not required
     status: Yup.string(),
     isVerified: Yup.boolean(),
   });
 
+  // const defaultValues = useMemo(
+  //   () => ({
+  //     name: currentUser?.name || '',
+  //     city: currentUser?.city || '',
+  //     role: currentUser?.role || 'user',
+  //     nic: currentUser?.nic || '',
+  //     licence: currentUser?.licence || '',
+  //     email: currentUser?.email || '',
+  //     state: currentUser?.state || '',
+  //     status: currentUser?.status || '',
+  //     address: currentUser?.address || '',
+  //     country: currentUser?.country || '',
+  //     zipCode: currentUser?.zipCode || '',
+  //     company: currentUser?.company || '',
+  //     avatarUrl: currentUser?.avatarUrl || null,
+  //     phoneNumber: currentUser?.phoneNumber || '',
+  //     isVerified: currentUser?.isVerified || true,
+  //   }),
+  //   [currentUser]
+  // );
+
   const defaultValues = useMemo(
     () => ({
       name: currentUser?.name || '',
-      city: currentUser?.city || '',
-      role: currentUser?.role || 'user',
+      email: currentUser?.email || '',
+      phoneNumber: currentUser?.phoneNumber || '',
+      address: currentUser?.address || '',
       nic: currentUser?.nic || '',
       licence: currentUser?.licence || '',
-      email: currentUser?.email || '',
-      state: currentUser?.state || '',
-      status: currentUser?.status || '',
-      address: currentUser?.address || '',
       country: currentUser?.country || '',
-      zipCode: currentUser?.zipCode || '',
       company: currentUser?.company || '',
+      state: currentUser?.state || '',
+      city: currentUser?.city || '',
+      zipCode: currentUser?.zipCode || '',
       avatarUrl: currentUser?.avatarUrl || null,
-      phoneNumber: currentUser?.phoneNumber || '',
-      isVerified: currentUser?.isVerified || true,
+      role: currentUser?.role || 'customer',
+      status: currentUser?.status || 'active',
+      isVerified: currentUser?.isVerified ?? true,
+      customerType: currentUser?.customerType || 'individual',
+      drivingExperience: currentUser?.drivingExperience || 0,
+      preferredVehicleType: currentUser?.preferredVehicleType || '',
+      licenseExpiry: currentUser?.licenseExpiry || '',
+      emergencyContactName: currentUser?.emergencyContactName || '',
+      emergencyContactNumber: currentUser?.emergencyContactNumber || '',
+      paymentMethod: currentUser?.paymentMethod || 'cash',
+      notes: currentUser?.notes || '',
     }),
     [currentUser]
   );
@@ -263,7 +292,43 @@ export default function UserNewEditForm({ currentUser }) {
               <RHFTextField name="address" label="Address" />
               <RHFTextField name="zipCode" label="Zip/Code" />
               <RHFTextField name="company" label="Occupation" />
-              {/* <RHFTextField name="role" label="Role" /> */}
+
+              {/* Customer Details */}
+              <RHFSelect native name="role" label="Role" InputLabelProps={{ shrink: true }}>
+                {['admin', 'staff', 'customer', 'driver'].map((r) => (
+                  <option key={r} value={r}>
+                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                  </option>
+                ))}
+              </RHFSelect>
+
+              <RHFSelect
+                native
+                name="customerType"
+                label="Customer Type"
+                InputLabelProps={{ shrink: true }}
+              >
+                <option value="individual">Individual</option>
+                <option value="company">Company</option>
+              </RHFSelect>
+
+              <RHFTextField name="drivingExperience" label="Driving Experience (years)" type="number" />
+
+              <RHFTextField name="preferredVehicleType" label="Preferred Vehicle Type" />
+
+              <RHFTextField name="licenseExpiry" label="License Expiry Date" type="date" InputLabelProps={{ shrink: true }} />
+
+              <RHFTextField name="emergencyContactName" label="Emergency Contact Name" />
+              <RHFTextField name="emergencyContactNumber" label="Emergency Contact Number" />
+
+              <RHFSelect native name="paymentMethod" label="Payment Method" InputLabelProps={{ shrink: true }}>
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="bank_transfer">Bank Transfer</option>
+              </RHFSelect>
+
+              <RHFTextField name="notes" label="Notes / Additional Info" multiline rows={2} />
+              {/* Customer details */}
 
               <RHFSelect native name="status" label="Status" InputLabelProps={{ shrink: true }} sx={{width:'50%'}}>
                 {USER_STATUS_OPTIONS.map((status) => (
