@@ -18,20 +18,32 @@ import { setSession, isValidToken } from './utils';
 
 const initialState = {
   user: null,
+  access_token: null,
+  refresh_token: null,
+  token_type: null,
+  expires_in: null,
   loading: true,
 };
 
 const reducer = (state, action) => {
   if (action.type === 'INITIAL') {
     return {
-      loading: false,
       user: action.payload.user,
+      access_token: action.payload.access_token?.access_token,
+      refresh_token: action.payload.refresh_token?.refresh_token,
+      token_type: action.payload.token_type?.token_type,
+      expires_in: action.payload.expires_in?.expires_in,
+      loading: false,
     };
   }
   if (action.type === 'LOGIN') {
     return {
       ...state,
       user: action.payload.user,
+      access_token: action.payload.access_token,
+      refresh_token: action.payload.refresh_token,
+      token_type: action.payload.token_type,
+      expires_in: action.payload.expires_in,
     };
   }
   if (action.type === 'REGISTER') {
@@ -52,6 +64,7 @@ const reducer = (state, action) => {
 // ----------------------------------------------------------------------
 
 const STORAGE_KEY = 'accessToken';
+const REFRESH_STORAGE_KEY = 'refreshToken'
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -59,28 +72,58 @@ export function AuthProvider({ children }) {
   const initialize = useCallback(async () => {
     try {
       const accessToken = sessionStorage.getItem(STORAGE_KEY);
+      const refreshToken = sessionStorage.getItem(REFRESH_STORAGE_KEY);
 
-      if (accessToken && isValidToken(accessToken)) {
-        setSession(accessToken);
 
-        const response = await axios.get(endpoints.auth.me);
+      if (accessToken || refreshToken) {
+        
+        
+        if(!accessToken && refreshToken){
+          const data = {
+            "refresh_token":refreshToken,
+          };
+          const response = await axios.post(endpoints.auth.refresh,data);
 
-        const { user } = response.data;
+          const { access_token, refresh_token , expires_in, user } = response.data;
 
-        dispatch({
-          type: 'INITIAL',
-          payload: {
-            user: {
-              ...user,
-              accessToken,
+          setSession(access_token, refresh_token);
+
+          dispatch({
+            type: 'INITIAL',
+            payload: {
+                user:user,
+                accessToken: access_token,
+                refresh_token: refresh_token,
+                expires_in: expires_in,
+              },
+          });
+        }
+        else if(accessToken){
+
+          setSession(accessToken,refreshToken)
+
+          const response = await axios.get(endpoints.auth.me);
+          
+
+          const user = response.data;
+
+          dispatch({
+            type: 'INITIAL',
+            payload: {
+                user:user,              
             },
-          },
-        });
+          });
+        }
+        
       } else {
         dispatch({
           type: 'INITIAL',
           payload: {
             user: null,
+            accessToken:null,
+            refreshToken:null,
+            token_type:null,
+            expires_in:null
           },
         });
       }
@@ -90,6 +133,10 @@ export function AuthProvider({ children }) {
         type: 'INITIAL',
         payload: {
           user: null,
+          accessToken:null,
+          refreshToken:null,
+          token_type:null,
+          expires_in:null
         },
       });
     }
@@ -101,6 +148,7 @@ export function AuthProvider({ children }) {
 
   // LOGIN
   const login = useCallback(async (email, password) => {
+    
     const data = {
       email,
       password,
@@ -108,17 +156,18 @@ export function AuthProvider({ children }) {
 
     const response = await axios.post(endpoints.auth.login, data);
 
-    const { accessToken, user } = response.data;
+    const { access_token, refresh_token, token_type, expires_in, user } = response.data;
 
-    setSession(accessToken);
+    setSession(access_token,refresh_token);
 
     dispatch({
       type: 'LOGIN',
       payload: {
-        user: {
-          ...user,
-          accessToken,
-        },
+          refresh_token,
+          access_token,
+          token_type,
+          expires_in,
+          user
       },
     });
   }, []);
@@ -151,7 +200,7 @@ export function AuthProvider({ children }) {
 
   // LOGOUT
   const logout = useCallback(async () => {
-    setSession(null);
+    setSession(null,null);
     dispatch({
       type: 'LOGOUT',
     });
@@ -159,7 +208,9 @@ export function AuthProvider({ children }) {
 
   // ----------------------------------------------------------------------
 
-  const checkAuthenticated = state.user ? 'authenticated' : 'unauthenticated';
+  const checkAuthenticated = state.user? 'authenticated' : 'unauthenticated';
+
+  const checkToken = state.accessToken ? checkToken : 'unauthenticated';
 
   const status = state.loading ? 'loading' : checkAuthenticated;
 

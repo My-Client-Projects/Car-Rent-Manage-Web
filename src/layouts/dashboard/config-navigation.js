@@ -59,11 +59,11 @@ export function useNavData() {
       {
         subheader: t('overview'),
         items: [
-          // {
-          //   title: t('app'),
-          //   path: paths.dashboard.root,
-          //   icon: ICONS.dashboard,
-          // },
+          {
+            title: t('dashboard'),
+            path: paths.dashboard.root,
+            icon: ICONS.dashboard,
+          },
           // {
           //   title: t('ecommerce'),
           //   path: paths.dashboard.general.ecommerce,
@@ -79,11 +79,6 @@ export function useNavData() {
           //   path: paths.dashboard.general.banking,
           //   icon: ICONS.banking,
           // },
-          {
-            title: t('dashboard'),
-            path: paths.dashboard.general.booking,
-            icon: ICONS.dashboard,
-          },
           // {
           //   title: t('file'),
           //   path: paths.dashboard.general.file,
@@ -114,19 +109,19 @@ export function useNavData() {
             ],
           },
           // USER
-          // {
-          //   title: t('users'),
-          //   path: paths.dashboard.user.root,
-          //   icon: ICONS.user,
-          //   children: [
-          //     { title: t('profile'), path: paths.dashboard.user.root },
-          //     { title: t('cards'), path: paths.dashboard.user.cards },
-          //     { title: t('list'), path: paths.dashboard.user.list },
-          //     { title: t('create'), path: paths.dashboard.user.new },
-          //     { title: t('edit'), path: paths.dashboard.user.demo.edit },
-          //     { title: t('account'), path: paths.dashboard.user.account },
-          //   ],
-          // },
+          {
+            title: t('users'),
+            path: paths.dashboard.user.root,
+            icon: ICONS.user,
+            children: [
+              { title: t('profile'), path: paths.dashboard.user.root },
+              { title: t('cards'), path: paths.dashboard.user.cards },
+              { title: t('list'), path: paths.dashboard.user.list },
+              { title: t('create'), path: paths.dashboard.user.new },
+              { title: t('edit'), path: paths.dashboard.user.demo.edit },
+              { title: t('account'), path: paths.dashboard.user.account },
+            ],
+          },
 
           // ORDER
           {
@@ -217,19 +212,19 @@ export function useNavData() {
           // },
 
           // // MAIL
-          // {
-          //   title: t('mail'),
-          //   path: paths.dashboard.mail,
-          //   icon: ICONS.mail,
-          //   info: <Label color="error">+32</Label>,
-          // },
+          {
+            title: t('mail'),
+            path: paths.dashboard.mail,
+            icon: ICONS.mail,
+            info: <Label color="error">+32</Label>,
+          },
 
           // // CHAT
-          // {
-          //   title: t('chat'),
-          //   path: paths.dashboard.chat,
-          //   icon: ICONS.chat,
-          // },
+          {
+            title: t('chat'),
+            path: paths.dashboard.chat,
+            icon: ICONS.chat,
+          },
 
           // CALENDAR
           {

@@ -30,9 +30,10 @@ export const endpoints = {
   kanban: '/api/kanban',
   calendar: '/api/calendar',
   auth: {
-    me: '/api/auth/me',
-    login: '/api/auth/login',
-    register: '/api/auth/register',
+    refresh: '/api/v1/auth/refresh',
+    me: '/api/v1/auth/me',
+    login: '/api/v1/auth/login',
+    register: '/api/v1/auth/register',
   },
   mail: {
     list: '/api/mail/list',
@@ -52,10 +53,10 @@ export const endpoints = {
   },
 
   car: {
-    add: '/api/car?endpoint=add',
-    list: '/api/car?endpoint=list',
-    details: '/api/car/details',
-    update: '/api/car?endpoint=update',
+    add: '/api/v1/fleet/vehicles',
+    list: '/api/v1/fleet/vehicles',
+    details: '/api/v1/fleet/vehicles',
+    update: '/api/v1/fleet/vehicles',
     search: '/api/car/search',
   },
   user: {
