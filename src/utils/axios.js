@@ -68,6 +68,10 @@ export const endpoints = {
     details: '/api/v1/fleet/vehicles',
     update: '/api/v1/fleet/vehicles',
     search: '/api/car/search',
+    add_document: '/api/v1/fleet/vehicles/add-document',
+    documents: (vehicleId) => `/api/v1/fleet/vehicles/${vehicleId}/documents`,
+    maintenance: (vehicleId) => `/api/v1/fleet/vehicles/${vehicleId}/maintenance`,
+    fuelLogs: (vehicleId) => `/api/v1/fleet/vehicles/${vehicleId}/fuel-logs`,
   },
   user: {
     add: '/api/user?endpoint=add',
