@@ -1,8 +1,5 @@
 import PropTypes from 'prop-types';
 
-import { paramCase } from 'src/utils/change-case';
-import axios, { endpoints } from 'src/utils/axios';
-
 import { PostDetailsView } from 'src/sections/blog/view';
 
 // ----------------------------------------------------------------------
@@ -12,21 +9,19 @@ export const metadata = {
 };
 
 export default function PostDetailsPage({ params }) {
-  const { title } = params;
+  const { id } = params;
 
-  return <PostDetailsView title={title} />;
+  return <PostDetailsView id={id} />;
 }
 
+// Vehicles are runtime data behind auth, so nothing can be prebuilt here —
+// pages render on demand (dynamicParams defaults to true).
 export async function generateStaticParams() {
-  const res = await axios.get(endpoints.post.list);
-
-  return res.data.posts.map((post) => ({
-    title: paramCase(post.title),
-  }));
+  return [];
 }
 
 PostDetailsPage.propTypes = {
   params: PropTypes.shape({
-    title: PropTypes.string,
+    id: PropTypes.string,
   }),
 };

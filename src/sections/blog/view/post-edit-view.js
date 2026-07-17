@@ -6,7 +6,7 @@ import Container from '@mui/material/Container';
 
 import { paths } from 'src/routes/paths';
 
-import { useGetPost } from 'src/api/blog';
+import { useGetVehicle } from 'src/api/vehicle';
 
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
@@ -15,26 +15,28 @@ import PostNewEditForm from '../post-new-edit-form';
 
 // ----------------------------------------------------------------------
 
-export default function PostEditView({ title }) {
+export default function PostEditView({ id }) {
   const settings = useSettingsContext();
 
-  const { post: currentPost } = useGetPost(`${title}`);
+  const { vehicle: currentVehicle } = useGetVehicle(id);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Edit"
+        heading="Edit Vehicle"
         links={[
           {
             name: 'Dashboard',
             href: paths.dashboard.root,
           },
           {
-            name: 'Blog',
+            name: 'Car',
             href: paths.dashboard.post.root,
           },
           {
-            name: currentPost?.title,
+            name: currentVehicle
+              ? `${currentVehicle.make} ${currentVehicle.model} (${currentVehicle.registration_no})`
+              : '',
           },
         ]}
         sx={{
@@ -42,11 +44,11 @@ export default function PostEditView({ title }) {
         }}
       />
 
-      <PostNewEditForm currentPost={currentPost} />
+      <PostNewEditForm currentVehicle={currentVehicle} />
     </Container>
   );
 }
 
 PostEditView.propTypes = {
-  title: PropTypes.string,
+  id: PropTypes.string,
 };

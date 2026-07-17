@@ -1,60 +1,74 @@
 'use client';
 
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
 
-import Chip from '@mui/material/Chip';
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import Grid from '@mui/material/Unstable_Grid2';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
-import Checkbox from '@mui/material/Checkbox';
+import Skeleton from '@mui/material/Skeleton';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import AvatarGroup, { avatarGroupClasses } from '@mui/material/AvatarGroup';
 
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
-import { fShortenNumber } from 'src/utils/format-number';
+import { useGetVehicle } from 'src/api/vehicle';
+import { VEHICLE_STATUS_OPTIONS } from 'src/_mock/_vehicle';
+import { useMetadataContext } from 'src/metadata/hooks';
 
-import { useGetPost } from 'src/api/blog';
-import { POST_PUBLISH_OPTIONS } from 'src/_mock';
-
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import Markdown from 'src/components/markdown';
 import EmptyContent from 'src/components/empty-content';
-
-import PostDetailsHero from '../post-details-hero';
-import PostCommentList from '../post-comment-list';
-import PostCommentForm from '../post-comment-form';
-import { PostDetailsSkeleton } from '../post-skeleton';
-import PostDetailsToolbar from '../post-details-toolbar';
+import { useSettingsContext } from 'src/components/settings';
+import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 // ----------------------------------------------------------------------
 
-export default function PostDetailsView({ title }) {
-  const [publish, setPublish] = useState('');
+function DetailField({ label, value }) {
+  return (
+    <Grid xs={12} sm={6} md={4}>
+      <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
+        {label}
+      </Typography>
+      <Typography variant="subtitle2" sx={{ textTransform: 'capitalize' }}>
+        {value || value === 0 ? value : '—'}
+      </Typography>
+    </Grid>
+  );
+}
 
-  const { post, postLoading, postError } = useGetPost(title);
+DetailField.propTypes = {
+  label: PropTypes.string,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};
 
-  const handleChangePublish = useCallback((newValue) => {
-    setPublish(newValue);
-  }, []);
+// ----------------------------------------------------------------------
 
-  useEffect(() => {
-    if (post) {
-      setPublish(post?.publish);
-    }
-  }, [post]);
+export default function PostDetailsView({ id }) {
+  const settings = useSettingsContext();
 
-  const renderSkeleton = <PostDetailsSkeleton />;
+  const { vehicle, vehicleLoading, vehicleError } = useGetVehicle(id);
+
+  const { vehicle_category: categories, branch: branches } = useMetadataContext();
+
+  const statusOption = VEHICLE_STATUS_OPTIONS.find((option) => option.value === vehicle?.status);
+  const categoryLabel = categories?.find((item) => item.id === vehicle?.category_id)?.label;
+  const branchLabel = branches?.find((item) => item.id === vehicle?.branch_id)?.label;
+
+  const renderSkeleton = (
+    <Stack spacing={3}>
+      <Skeleton variant="rounded" width={160} height={36} />
+      <Skeleton variant="rounded" height={320} />
+    </Stack>
+  );
 
   const renderError = (
     <EmptyContent
       filled
-      title={`${postError?.message}`}
+      title={vehicleError?.message || 'Vehicle not found'}
       action={
         <Button
           component={RouterLink}
@@ -65,110 +79,110 @@ export default function PostDetailsView({ title }) {
           Back to List
         </Button>
       }
-      sx={{
-        py: 20,
-      }}
+      sx={{ py: 20 }}
     />
   );
 
-  const renderPost = post && (
-    <>
-      <PostDetailsToolbar
-        backLink={paths.dashboard.post.root}
-        editLink={paths.dashboard.post.edit(`${post?.title}`)}
-        liveLink={paths.post.details(`${post?.title}`)}
-        publish={publish || ''}
-        onChangePublish={handleChangePublish}
-        publishOptions={POST_PUBLISH_OPTIONS}
-      />
+  const renderVehicle = vehicle && (
+    <Stack spacing={3}>
+      <Stack direction="row" alignItems="center" spacing={1.5}>
+        <Button
+          component={RouterLink}
+          href={paths.dashboard.post.root}
+          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={16} />}
+        >
+          Back
+        </Button>
 
-      <PostDetailsHero title={post.title} coverUrl={post.coverUrl} />
+        <Box sx={{ flexGrow: 1 }} />
 
-      <Stack
-        sx={{
-          maxWidth: 720,
-          mx: 'auto',
-          mt: { xs: 5, md: 10 },
-        }}
-      >
-        <Typography variant="subtitle1" sx={{ mb: 5 }}>
-          {post.description}
+        <Label
+          variant="soft"
+          color={statusOption?.color || 'default'}
+          sx={{ textTransform: 'capitalize' }}
+        >
+          {statusOption?.label || vehicle.status}
+        </Label>
+
+        <Button
+          component={RouterLink}
+          href={paths.dashboard.post.edit(vehicle.vehicle_id)}
+          variant="contained"
+          startIcon={<Iconify icon="solar:pen-bold" />}
+        >
+          Edit
+        </Button>
+      </Stack>
+
+      <Card sx={{ p: 3 }}>
+        <Typography variant="h4">
+          {vehicle.make} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ''}
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+          {vehicle.registration_no}
         </Typography>
 
-        <Markdown children={post.content} />
+        <Divider sx={{ my: 3, borderStyle: 'dashed' }} />
 
-        <Stack
-          spacing={3}
-          sx={{
-            py: 3,
-            borderTop: (theme) => `dashed 1px ${theme.palette.divider}`,
-            borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
-          }}
-        >
-          <Stack direction="row" flexWrap="wrap" spacing={1}>
-            {post.tags.map((tag) => (
-              <Chip key={tag} label={tag} variant="soft" />
-            ))}
-          </Stack>
-
-          <Stack direction="row" alignItems="center">
-            <FormControlLabel
-              control={
-                <Checkbox
-                  defaultChecked
-                  size="small"
-                  color="error"
-                  icon={<Iconify icon="solar:heart-bold" />}
-                  checkedIcon={<Iconify icon="solar:heart-bold" />}
-                />
-              }
-              label={fShortenNumber(post.totalFavorites)}
-              sx={{ mr: 1 }}
-            />
-
-            <AvatarGroup
-              sx={{
-                [`& .${avatarGroupClasses.avatar}`]: {
-                  width: 32,
-                  height: 32,
-                },
-              }}
-            >
-              {post.favoritePerson.map((person) => (
-                <Avatar key={person.name} alt={person.name} src={person.avatarUrl} />
-              ))}
-            </AvatarGroup>
-          </Stack>
-        </Stack>
-
-        <Stack direction="row" sx={{ mb: 3, mt: 5 }}>
-          <Typography variant="h4">Comments</Typography>
-
-          <Typography variant="subtitle2" sx={{ color: 'text.disabled' }}>
-            ({post.comments.length})
-          </Typography>
-        </Stack>
-
-        <PostCommentForm />
-
-        <Divider sx={{ mt: 5, mb: 2 }} />
-
-        <PostCommentList comments={post.comments} />
-      </Stack>
-    </>
+        <Grid container spacing={3}>
+          <DetailField label="Category" value={categoryLabel} />
+          <DetailField label="Branch" value={branchLabel} />
+          <DetailField label="Vehicle Class" value={vehicle.vehicle_class} />
+          <DetailField label="Color" value={vehicle.color} />
+          <DetailField label="Fuel Type" value={vehicle.fuel_type} />
+          <DetailField label="Transmission" value={vehicle.transmission} />
+          <DetailField label="Current Odometer" value={`${vehicle.current_odometer ?? 0} km`} />
+          <DetailField
+            label="Daily KM Limit"
+            value={vehicle.daily_km_limit ? `${vehicle.daily_km_limit} km/day` : undefined}
+          />
+          <DetailField label="Passenger Capacity" value={vehicle.passenger_capacity} />
+          <DetailField
+            label="Payload Capacity"
+            value={vehicle.payload_capacity_kg ? `${vehicle.payload_capacity_kg} kg` : undefined}
+          />
+          <DetailField
+            label="Cargo Volume"
+            value={vehicle.cargo_volume_m3 ? `${vehicle.cargo_volume_m3} m³` : undefined}
+          />
+          <DetailField label="GPS Device" value={vehicle.gps_device_id} />
+          <DetailField label="With Driver Only" value={vehicle.with_driver_only ? 'Yes' : 'No'} />
+        </Grid>
+      </Card>
+    </Stack>
   );
 
   return (
-    <Container maxWidth={false}>
-      {postLoading && renderSkeleton}
+    <Container maxWidth={settings.themeStretch ? false : 'lg'}>
+      <CustomBreadcrumbs
+        heading="Vehicle Details"
+        links={[
+          {
+            name: 'Dashboard',
+            href: paths.dashboard.root,
+          },
+          {
+            name: 'Car',
+            href: paths.dashboard.post.root,
+          },
+          {
+            name: vehicle ? `${vehicle.make} ${vehicle.model}` : '',
+          },
+        ]}
+        sx={{
+          mb: { xs: 3, md: 5 },
+        }}
+      />
 
-      {postError && renderError}
+      {vehicleLoading && renderSkeleton}
 
-      {post && renderPost}
+      {vehicleError && renderError}
+
+      {vehicle && renderVehicle}
     </Container>
   );
 }
 
 PostDetailsView.propTypes = {
-  title: PropTypes.string,
+  id: PropTypes.string,
 };

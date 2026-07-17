@@ -17,7 +17,7 @@ export default function PostCreateView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Add a new car"
+        heading="Add a new vehicle"
         links={[
           {
             name: 'Dashboard',

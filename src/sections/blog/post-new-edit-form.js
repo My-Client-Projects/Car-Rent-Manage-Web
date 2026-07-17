@@ -2,107 +2,141 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useMemo, useEffect, useCallback,useState } from 'react';
+import { useMemo, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import Switch from '@mui/material/Switch';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Unstable_Grid2';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
-import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
-import { CAR_FUEL_OPTIONS, CAR_SEAT_OPTIONS, CAR_COLOR_OPTIONS, CAR_MODEL_OPTIONS, CAR_STATUS_OPTIONS, CAR_COLOR_NAME_OPTIONS } from 'src/_mock/_fleetCar';
+import {
+  VEHICLE_MAKES,
+  FUEL_TYPE_OPTIONS,
+  CARGO_VEHICLE_CLASSES,
+  TRANSMISSION_OPTIONS,
+  VEHICLE_CLASS_OPTIONS,
+  VEHICLE_STATUS_OPTIONS,
+} from 'src/_mock/_vehicle';
+import { createVehicle, updateVehicle } from 'src/api/vehicle';
+import { useMetadataContext } from 'src/metadata/hooks';
 
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, {
-  RHFSelect,
-  RHFEditor,
-  RHFUpload,
   RHFSwitch,
+  RHFSelect,
   RHFTextField,
-  RHFMultiSelect,
   RHFAutocomplete,
-  RHFMultiCheckbox
 } from 'src/components/hook-form';
-import { addNewCar, updateCar } from 'src/api/blog';
 
 // ----------------------------------------------------------------------
+// Fields the backend accepts on PATCH (edit). Everything else on the vehicle
+// record is set once at creation and can't be changed afterwards, so those
+// inputs are locked once `currentVehicle` is passed in.
+const EDITABLE_ON_UPDATE = new Set([
+  'branch_id',
+  'color',
+  'current_odometer',
+  'daily_km_limit',
+  'gps_device_id',
+  'passenger_capacity',
+  'payload_capacity_kg',
+  'cargo_volume_m3',
+  'status',
+  'photoUrls',
+  'with_driver_only',
+]);
 
-export default function PostNewEditForm({ currentCar }) {
+const toNumberOrNull = (value) => {
+  if (value === '' || value === null || value === undefined) return null;
+  const num = Number(value);
+  return Number.isNaN(num) ? null : num;
+};
+
+export default function PostNewEditForm({ currentVehicle }) {
   const router = useRouter();
 
   const mdUp = useResponsive('up', 'md');
 
   const { enqueueSnackbar } = useSnackbar();
 
-  const [includeTaxes, setIncludeTaxes] = useState(false);
+  const { vehicle_category: categories, branch: branches, loading: metadataLoading, get_metadata } =
+    useMetadataContext();
 
-  const NewProductSchema = Yup.object().shape({
-    // name: Yup.string().required('Name is required'),
-    // images: Yup.array().min(1, 'Images is required'),
-    // tags: Yup.array().min(2, 'Must have at least 2 tags'),
-    // category: Yup.string().required('Category is required'),
-    // price: Yup.number().moreThan(0, 'Price should not be $0.00'),
-    // description: Yup.string().required('Description is required'),
-    // not required
-    // taxes: Yup.number(),
-    // newLabel: Yup.object().shape({
-    //   enabled: Yup.boolean(),
-    //   content: Yup.string(),
-    // }),
-    // saleLabel: Yup.object().shape({
-    //   enabled: Yup.boolean(),
-    //   content: Yup.string(),
-    // }),
+  useEffect(() => {
+    if (!metadataLoading && !categories?.length && !branches?.length) {
+      get_metadata();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isEdit = !!currentVehicle;
+
+  const disabledOnEdit = (field) => isEdit && !EDITABLE_ON_UPDATE.has(field);
+
+  const NewVehicleSchema = Yup.object().shape({
+    category_id: Yup.string().required('Category is required'),
+    branch_id: Yup.string().required('Branch is required'),
+    registration_no: Yup.string().required('Registration number is required'),
+    make: Yup.string().required('Make is required'),
+    model: Yup.string().required('Model is required'),
+    year: Yup.mixed().nullable(),
+    color: Yup.string().nullable(),
+    fuel_type: Yup.string().nullable(),
+    transmission: Yup.string().nullable(),
+    vehicle_class: Yup.string().required('Vehicle class is required'),
+    daily_km_limit: Yup.mixed().nullable(),
+    gps_device_id: Yup.string().nullable(),
+    passenger_capacity: Yup.mixed().nullable(),
+    payload_capacity_kg: Yup.mixed().nullable(),
+    cargo_volume_m3: Yup.mixed().nullable(),
+    with_driver_only: Yup.boolean(),
+    status: Yup.string().required('Status is required'),
+    current_odometer: Yup.mixed().nullable(),
   });
 
   const defaultValues = useMemo(
     () => ({
-      brand: currentCar?.brand || '',
-      description: currentCar?.description || '',
-      subDescription: currentCar?.subDescription || '',
-      images: currentCar?.images || [],
-      //
-      code: currentCar?.code || '',
-      sku: currentCar?.sku || '',
-      price: currentCar?.price || 0,
-      quantity: currentCar?.quantity || 0,
-      priceSale: currentCar?.priceSale || 0,
-      tags: currentCar?.tags || [],
-      taxes: currentCar?.taxes || 0,
-      fuelType: currentCar?.fuelType || '',
-      carModel: currentCar?.carModel || '',
-      colors: currentCar?.colors || [],
-      seats: currentCar?.seats || [],
-      status: currentCar?.status,
-      // newLabel: currentCar?.newLabel || { enabled: false, content: '' },
-      // saleLabel: currentCar?.saleLabel || { enabled: false, content: '' },
+      category_id: currentVehicle?.category_id || '',
+      branch_id: currentVehicle?.branch_id || '',
+      registration_no: currentVehicle?.registration_no || '',
+      make: currentVehicle?.make || '',
+      model: currentVehicle?.model || '',
+      year: currentVehicle?.year ?? '',
+      vehicle_class: currentVehicle?.vehicle_class || 'car',
+      color: currentVehicle?.color || '',
+      fuel_type: currentVehicle?.fuel_type || '',
+      transmission: currentVehicle?.transmission || '',
+      current_odometer: currentVehicle?.current_odometer ?? 0,
+      daily_km_limit: currentVehicle?.daily_km_limit ?? '',
+      gps_device_id: currentVehicle?.gps_device_id || '',
+      with_driver_only: currentVehicle?.with_driver_only || false,
+      passenger_capacity: currentVehicle?.passenger_capacity ?? '',
+      payload_capacity_kg: currentVehicle?.payload_capacity_kg ?? '',
+      cargo_volume_m3: currentVehicle?.cargo_volume_m3 ?? '',
+      status: currentVehicle?.status || 'available',
+      photoUrls: currentVehicle?.photos?.urls || [],
     }),
-    [currentCar]
+    [currentVehicle]
   );
 
   const methods = useForm({
-    resolver: yupResolver(NewProductSchema),
+    resolver: yupResolver(NewVehicleSchema),
     defaultValues,
   });
 
   const {
-    reset,
     watch,
-    setValue,
+    reset,
     handleSubmit,
     formState: { isSubmitting },
   } = methods;
@@ -110,142 +144,78 @@ export default function PostNewEditForm({ currentCar }) {
   const values = watch();
 
   useEffect(() => {
-    if (currentCar) {
+    if (currentVehicle) {
       reset(defaultValues);
     }
-  }, [currentCar, defaultValues, reset]);
+  }, [currentVehicle, defaultValues, reset]);
 
-  useEffect(() => {
-    if (includeTaxes) {
-      setValue('taxes', 0);
-    } else {
-      setValue('taxes', currentCar?.taxes || 0);
-    }
-  }, [currentCar?.taxes, includeTaxes, setValue]);
+  const isCargoClass = CARGO_VEHICLE_CLASSES.includes(values.vehicle_class);
 
   const onSubmit = handleSubmit(async (data) => {
-
     try {
-      if (currentCar) {
-        const {_id} = currentCar
-        await updateCar(_id,data);
+      if (isEdit) {
+        await updateVehicle(currentVehicle.vehicle_id, {
+          branch_id: data.branch_id,
+          color: data.color,
+          current_odometer: toNumberOrNull(data.current_odometer),
+          daily_km_limit: toNumberOrNull(data.daily_km_limit),
+          gps_device_id: data.gps_device_id,
+          passenger_capacity: toNumberOrNull(data.passenger_capacity),
+          payload_capacity_kg: toNumberOrNull(data.payload_capacity_kg),
+          cargo_volume_m3: toNumberOrNull(data.cargo_volume_m3),
+          status: data.status,
+          with_driver_only: data.with_driver_only,
+          // The API never returns `photos` on GET, so there's no reliable way to
+          // detect "user cleared them" vs. "we never had them loaded". Only send
+          // the field when there's something to set, so an empty list here never
+          // wipes photos that may already exist server-side.
+          ...(data.photoUrls?.length ? { photos: { urls: data.photoUrls } } : {}),
+        });
         enqueueSnackbar('Update success!');
       } else {
-        await addNewCar(data);
+        await createVehicle({
+          category_id: data.category_id,
+          branch_id: data.branch_id,
+          registration_no: data.registration_no,
+          make: data.make,
+          model: data.model,
+          year: toNumberOrNull(data.year),
+          color: data.color,
+          fuel_type: data.fuel_type,
+          transmission: data.transmission,
+          vehicle_class: data.vehicle_class,
+          daily_km_limit: toNumberOrNull(data.daily_km_limit),
+          gps_device_id: data.gps_device_id,
+          passenger_capacity: toNumberOrNull(data.passenger_capacity),
+          payload_capacity_kg: toNumberOrNull(data.payload_capacity_kg),
+          cargo_volume_m3: toNumberOrNull(data.cargo_volume_m3),
+          with_driver_only: data.with_driver_only,
+        });
         enqueueSnackbar('Create success!');
       }
-      // reset();
-      enqueueSnackbar(currentCar ? 'Update success!' : 'Create success!');
       router.push(paths.dashboard.post.root);
     } catch (error) {
       console.error(error);
+      enqueueSnackbar(error?.message || 'Something went wrong', { variant: 'error' });
     }
   });
-
-  const handleDrop = useCallback(
-    (acceptedFiles) => {
-      const files = values.images || [];
-
-      const newFiles = acceptedFiles.map((file) =>
-        Object.assign(file, {
-          preview: URL.createObjectURL(file),
-        })
-      );
-
-      setValue('images', [...files, ...newFiles], { shouldValidate: true });
-    },
-    [setValue, values.images]
-  );
-
-  const handleRemoveFile = useCallback(
-    (inputFile) => {
-      const filtered = values.images && values.images?.filter((file) => file !== inputFile);
-      setValue('images', filtered);
-    },
-    [setValue, values.images]
-  );
-
-  const handleRemoveAllFiles = useCallback(() => {
-    setValue('images', []);
-  }, [setValue]);
-
-  const handleChangeIncludeTaxes = useCallback((event) => {
-    setIncludeTaxes(event.target.checked);
-  }, []);
 
   const renderDetails = (
     <>
       {mdUp && (
         <Grid md={4}>
           <Typography variant="h6" sx={{ mb: 0.5 }}>
-            Details
+            Vehicle Details
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Brand, model description, image...
+            Identity, category and branch. These are locked once the vehicle is created.
           </Typography>
         </Grid>
       )}
 
       <Grid xs={12} md={8}>
         <Card>
-          {!mdUp && <CardHeader title="Details" />}
-
-          <Stack spacing={3} sx={{ p: 3 }}>
-            <RHFTextField name="brand" label="Brand" />
-
-            {/* <RHFTextField name="model" label="Model" /> */}
-
-              <RHFSelect native name="carModel" label="Model" InputLabelProps={{ shrink: true }}>
-                {CAR_MODEL_OPTIONS.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                ))}
-                
-              </RHFSelect>
-
-            <RHFTextField name="subDescription" label="Sub Description" multiline rows={4} />
-
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle2">Content</Typography>
-              <RHFEditor simple name="description" />
-            </Stack>
-
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle2">Images</Typography>
-              <RHFUpload
-                multiple
-                thumbnail
-                name="images"
-                maxSize={3145728}
-                onDrop={handleDrop}
-                onRemove={handleRemoveFile}
-                onRemoveAll={handleRemoveAllFiles}
-                onUpload={() => console.info('ON UPLOAD')}
-              />
-            </Stack>
-          </Stack>
-        </Card>
-      </Grid>
-    </>
-  );
-
-  const renderProperties = (
-    <>
-      {mdUp && (
-        <Grid md={4}>
-          <Typography variant="h6" sx={{ mb: 0.5 }}>
-            Properties
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Additional functions and attributes...
-          </Typography>
-        </Grid>
-      )}
-
-      <Grid xs={12} md={8}>
-        <Card>
-          {!mdUp && <CardHeader title="Properties" />}
+          {!mdUp && <CardHeader title="Vehicle Details" />}
 
           <Stack spacing={3} sx={{ p: 3 }}>
             <Box
@@ -257,223 +227,268 @@ export default function PostNewEditForm({ currentCar }) {
                 md: 'repeat(2, 1fr)',
               }}
             >
-
-              <RHFTextField name="year" label="Year" />
-
-              <RHFTextField name="registrationNumber" label="Registration Number" />
-
-              <RHFTextField name="transmission" label="Transmission" />
-
-              <RHFMultiSelect
-                checkbox
-                name="colors"
-                label="Colors"
-                options={CAR_COLOR_NAME_OPTIONS}
+              <RHFAutocomplete
+                name="make"
+                label="Make"
+                freeSolo
+                disabled={disabledOnEdit('make')}
+                options={VEHICLE_MAKES}
+                getOptionLabel={(option) => option}
               />
 
-              <RHFMultiSelect checkbox name="seats" label="Seats" options={CAR_SEAT_OPTIONS} />
+              <RHFTextField name="model" label="Model" disabled={disabledOnEdit('model')} />
 
-               <Stack spacing={1}>
-                <Typography variant="subtitle2">Fuel Type</Typography>
-                <RHFMultiCheckbox row name="fuelType" spacing={2} options={CAR_FUEL_OPTIONS} />
-              </Stack>
+              <RHFTextField
+                name="registration_no"
+                label="Registration Number"
+                disabled={disabledOnEdit('registration_no')}
+              />
+
+              <RHFTextField
+                name="year"
+                label="Year"
+                type="number"
+                disabled={disabledOnEdit('year')}
+              />
+
+              <RHFSelect
+                native
+                name="vehicle_class"
+                label="Vehicle Class"
+                disabled={disabledOnEdit('vehicle_class')}
+                InputLabelProps={{ shrink: true }}
+              >
+                {VEHICLE_CLASS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </RHFSelect>
+
+              <RHFSelect
+                native
+                name="category_id"
+                label="Category"
+                disabled={disabledOnEdit('category_id')}
+                InputLabelProps={{ shrink: true }}
+              >
+                <option value="" />
+                {categories?.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.label}
+                  </option>
+                ))}
+              </RHFSelect>
+
+              <RHFSelect
+                native
+                name="branch_id"
+                label="Branch"
+                InputLabelProps={{ shrink: true }}
+              >
+                <option value="" />
+                {branches?.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.label}
+                  </option>
+                ))}
+              </RHFSelect>
             </Box>
-
-            {/* <RHFAutocomplete
-              name="tags"
-              label="Tags"
-              placeholder="+ Tags"
-              multiple
-              freeSolo
-              options={_tags.map((option) => option)}
-              getOptionLabel={(option) => option}
-              renderOption={(props, option) => (
-                <li {...props} key={option}>
-                  {option}
-                </li>
-              )}
-              renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option}
-                    label={option}
-                    size="small"
-                    color="info"
-                    variant="soft"
-                  />
-                ))
-              }
-            /> */}
-
-            <Divider sx={{ borderStyle: 'dashed' }} />
-
-            
           </Stack>
         </Card>
       </Grid>
     </>
   );
 
-  const renderPricing = (
+  const renderProperties = (
     <>
       {mdUp && (
         <Grid md={4}>
           <Typography variant="h6" sx={{ mb: 0.5 }}>
-            Rental Pricing
+            Specifications
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Define the pricing structure for this vehicle
+            Physical attributes and capacity.
           </Typography>
         </Grid>
       )}
 
       <Grid xs={12} md={8}>
         <Card>
-          {!mdUp && <CardHeader title="Rental Pricing" />}
+          {!mdUp && <CardHeader title="Specifications" />}
 
           <Stack spacing={3} sx={{ p: 3 }}>
-            {/* Per Day Cost */}
-            <RHFTextField
-              name="costPerDay"
-              label="Cost Per Day"
-              placeholder="0.00"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      $
-                    </Box>
-                  </InputAdornment>
-                ),
+            <Box
+              columnGap={2}
+              rowGap={3}
+              display="grid"
+              gridTemplateColumns={{
+                xs: 'repeat(1, 1fr)',
+                md: 'repeat(2, 1fr)',
               }}
-            />
+            >
+              <RHFTextField name="color" label="Color" disabled={disabledOnEdit('color')} />
 
-            {/* Free Mileage Per Day */}
-            <RHFTextField
-              name="mileagePerDay"
-              label="Free Mileage Per Day"
-              placeholder="e.g. 100"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      km
-                    </Box>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Extra Mileage Charge */}
-            <RHFTextField
-              name="extraMileageCharge"
-              label="Extra Mileage Charge"
-              placeholder="0.00"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      $/km
-                    </Box>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Deposit Amount */}
-            <RHFTextField
-              name="depositAmount"
-              label="Deposit Amount"
-              placeholder="0.00"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      $
-                    </Box>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Insurance Cost */}
-            <RHFTextField
-              name="insuranceCost"
-              label="Insurance Cost (Optional)"
-              placeholder="0.00"
-              type="number"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      $
-                    </Box>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Tax Toggle */}
-            {/* <FormControlLabel
-              control={<Switch checked={includeTaxes} onChange={handleChangeIncludeTaxes} />}
-              label="Price includes taxes"
-            />
-
-            {!includeTaxes && (
-              <RHFTextField
-                name="taxes"
-                label="Tax (%)"
-                placeholder="0.00"
-                type="number"
+              <RHFSelect
+                native
+                name="fuel_type"
+                label="Fuel Type"
+                disabled={disabledOnEdit('fuel_type')}
                 InputLabelProps={{ shrink: true }}
+              >
+                <option value="" />
+                {FUEL_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </RHFSelect>
+
+              <RHFSelect
+                native
+                name="transmission"
+                label="Transmission"
+                disabled={disabledOnEdit('transmission')}
+                InputLabelProps={{ shrink: true }}
+              >
+                <option value="" />
+                {TRANSMISSION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </RHFSelect>
+
+              <RHFTextField
+                name="gps_device_id"
+                label="GPS Device ID"
+                disabled={disabledOnEdit('gps_device_id')}
+              />
+
+              {isEdit && (
+                <RHFTextField
+                  name="current_odometer"
+                  label="Current Odometer"
+                  type="number"
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">km</InputAdornment>,
+                  }}
+                />
+              )}
+
+              <RHFTextField
+                name="daily_km_limit"
+                label="Daily KM Limit"
+                type="number"
+                disabled={disabledOnEdit('daily_km_limit')}
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Box component="span" sx={{ color: 'text.disabled' }}>
-                        %
-                      </Box>
-                    </InputAdornment>
-                  ),
+                  endAdornment: <InputAdornment position="end">km/day</InputAdornment>,
                 }}
               />
-            )} */}
+
+              {!isCargoClass && (
+                <RHFTextField
+                  name="passenger_capacity"
+                  label="Passenger Capacity"
+                  type="number"
+                  disabled={disabledOnEdit('passenger_capacity')}
+                />
+              )}
+
+              {isCargoClass && (
+                <>
+                  <RHFTextField
+                    name="payload_capacity_kg"
+                    label="Payload Capacity"
+                    type="number"
+                    disabled={disabledOnEdit('payload_capacity_kg')}
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">kg</InputAdornment>,
+                    }}
+                  />
+
+                  <RHFTextField
+                    name="cargo_volume_m3"
+                    label="Cargo Volume"
+                    type="number"
+                    disabled={disabledOnEdit('cargo_volume_m3')}
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">m³</InputAdornment>,
+                    }}
+                  />
+                </>
+              )}
+            </Box>
+
+            <Divider sx={{ borderStyle: 'dashed' }} />
+
+            <RHFSwitch name="with_driver_only" label="With driver only" />
           </Stack>
         </Card>
       </Grid>
     </>
   );
 
+  const renderPhotos = isEdit && (
+    <>
+      {mdUp && (
+        <Grid md={4}>
+          <Typography variant="h6" sx={{ mb: 0.5 }}>
+            Photos
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Image URLs for this vehicle.
+          </Typography>
+        </Grid>
+      )}
+
+      <Grid xs={12} md={8}>
+        <Card>
+          {!mdUp && <CardHeader title="Photos" />}
+
+          <Stack spacing={3} sx={{ p: 3 }}>
+            <RHFAutocomplete
+              name="photoUrls"
+              label="Photo URLs"
+              placeholder="+ Paste an image URL and press enter"
+              multiple
+              freeSolo
+              options={[]}
+            />
+          </Stack>
+        </Card>
+      </Grid>
+    </>
+  );
 
   const renderActions = (
     <>
       {mdUp && <Grid md={4} />}
-      <Grid xs={12} md={8} sx={{ display: 'flex', alignItems: 'center', justifyContent:'space-between' }}>
-        {/* <FormControlLabel
-          control={<Switch defaultChecked />}
-          label="Publish"
-          sx={{ flexGrow: 1, pl: 3 }}
-        /> */}
-
-        <RHFSelect native name="status" label="Status" InputLabelProps={{ shrink: true }} sx={{width:'50%'}}>
-          {CAR_STATUS_OPTIONS.map((status) => (
-             <option key={status.value} value={status.value}>
-                  {status.label}
+      <Grid
+        xs={12}
+        md={8}
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        {isEdit ? (
+          <RHFSelect
+            native
+            name="status"
+            label="Status"
+            InputLabelProps={{ shrink: true }}
+            sx={{ width: '50%' }}
+          >
+            {VEHICLE_STATUS_OPTIONS.map((status) => (
+              <option key={status.value} value={status.value}>
+                {status.label}
               </option>
-          ))}
-        </RHFSelect>
+            ))}
+          </RHFSelect>
+        ) : (
+          <Box />
+        )}
 
         <LoadingButton type="submit" variant="contained" size="large" loading={isSubmitting}>
-          {!currentCar ? 'Add Carr' : 'Save Car'}
+          {!isEdit ? 'Add Vehicle' : 'Save Changes'}
         </LoadingButton>
       </Grid>
     </>
@@ -486,7 +501,7 @@ export default function PostNewEditForm({ currentCar }) {
 
         {renderProperties}
 
-        {renderPricing}
+        {renderPhotos}
 
         {renderActions}
       </Grid>
@@ -495,5 +510,5 @@ export default function PostNewEditForm({ currentCar }) {
 }
 
 PostNewEditForm.propTypes = {
-  currentCar: PropTypes.object,
+  currentVehicle: PropTypes.object,
 };

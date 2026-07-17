@@ -1,61 +1,8 @@
 import { useMemo } from 'react';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 
-import axios, { fetcher, endpoints } from 'src/utils/axios';
+import { fetcher, endpoints } from 'src/utils/axios';
 
-
-// ----------------------------------------------------------------------
-
-export async function addNewCar(carData) {
-  const URL = endpoints.car.list; // endpoint for fetching all cars
-  const ADD_URL = endpoints.car.add; // endpoint for creating new car
-
-  // POST new car to server
-  const res = await axios.post(ADD_URL, carData);
-
-  // Update SWR cache locally without refetch
-  mutate(
-    URL,
-    (currentData) => {
-      if (!currentData) return { cars: [carData] }; // if no data, init
-      return {
-        ...currentData,
-        cars: [...currentData.cars, carData],
-      };
-    },
-    false
-  );
-
-  return res.data;
-}
-
-// ----------------------------------------------------------------------
-export async function updateCar(id, carData) {
-  const URL = endpoints.car.list; // main list cache
-  const UPDATE_URL = `${endpoints.car.update}/${id}`; // ex: /api/cars/:id
-
-  const res = await axios.put(UPDATE_URL, carData);
-
-  // Optimistic update: replace updated car in cache
-  mutate(
-    URL,
-    (currentData) => {
-      if (!currentData) return null;
-
-      const updatedCars = currentData.cars.map((car) =>
-        car.id === id ? res.data : car
-      );
-
-      return {
-        ...currentData,
-        cars: updatedCars,
-      };
-    },
-    false
-  );
-
-  return res.data;
-}
 
 // ----------------------------------------------------------------------
 
@@ -63,9 +10,6 @@ export function useGetPosts() {
   const URL = endpoints.car.list;
 
   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
-
-  console.log("======data======",data);
-  
 
   const memoizedValue = useMemo(
     () => ({
@@ -84,18 +28,18 @@ export function useGetPosts() {
 // ----------------------------------------------------------------------
 
 export function useGetPost(title) {
-  const URL = title ? [endpoints.post.details, { params: { title } }] : '';
+  const URL = title ? [endpoints.car.details, { params: { title } }] : '';
 
   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
 
   const memoizedValue = useMemo(
     () => ({
-      post: data?.post,
+      post: data || [],
       postLoading: isLoading,
       postError: error,
       postValidating: isValidating,
     }),
-    [data?.post, error, isLoading, isValidating]
+    [data, error, isLoading, isValidating]
   );
 
   return memoizedValue;

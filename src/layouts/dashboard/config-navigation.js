@@ -108,20 +108,6 @@ export function useNavData() {
               // { title: t('edit'), path: paths.dashboard.product.demo.edit },
             ],
           },
-          // USER
-          {
-            title: t('users'),
-            path: paths.dashboard.user.root,
-            icon: ICONS.user,
-            children: [
-              { title: t('profile'), path: paths.dashboard.user.root },
-              { title: t('cards'), path: paths.dashboard.user.cards },
-              { title: t('list'), path: paths.dashboard.user.list },
-              { title: t('create'), path: paths.dashboard.user.new },
-              { title: t('edit'), path: paths.dashboard.user.demo.edit },
-              { title: t('account'), path: paths.dashboard.user.account },
-            ],
-          },
 
           // ORDER
           {
@@ -146,6 +132,21 @@ export function useNavData() {
               //   path: paths.dashboard.product.demo.details,
               // },
               // { title: t('edit'), path: paths.dashboard.product.demo.edit },
+            ],
+          },
+
+          // USER
+          {
+            title: t('users'),
+            path: paths.dashboard.user.root,
+            icon: ICONS.user,
+            children: [
+              { title: t('profile'), path: paths.dashboard.user.root },
+              { title: t('cards'), path: paths.dashboard.user.cards },
+              { title: t('list'), path: paths.dashboard.user.list },
+              { title: t('create'), path: paths.dashboard.user.new },
+              { title: t('edit'), path: paths.dashboard.user.demo.edit },
+              { title: t('account'), path: paths.dashboard.user.account },
             ],
           },
 

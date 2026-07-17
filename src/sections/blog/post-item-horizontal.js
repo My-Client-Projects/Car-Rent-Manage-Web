@@ -4,26 +4,36 @@ import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-import { RouterLink } from 'src/routes/components';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fDate } from 'src/utils/format-time';
-import { fShortenNumber } from 'src/utils/format-number';
+
+import { VEHICLE_STATUS_OPTIONS } from 'src/_mock/_vehicle';
+import { useMetadataContext } from 'src/metadata/hooks';
 
 import Label from 'src/components/label';
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import TextMaxLine from 'src/components/text-max-line';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
+
+const VEHICLE_CLASS_ICONS = {
+  car: 'mdi:car',
+  suv: 'mdi:car-estate',
+  van: 'mdi:van-utility',
+  bus: 'mdi:bus',
+  truck: 'mdi:truck',
+  lorry: 'mdi:truck-cargo-container',
+  bike: 'mdi:motorbike',
+  tuktuk: 'mdi:rickshaw',
+};
 
 export default function PostItemHorizontal({ car }) {
   const popover = usePopover();
@@ -32,20 +42,30 @@ export default function PostItemHorizontal({ car }) {
 
   const smUp = useResponsive('up', 'sm');
 
+  const { vehicle_category: categories, branch: branches } = useMetadataContext();
+
   const {
-    name,
-    brand,
+    vehicle_id,
+    registration_no,
+    make,
     model,
     year,
-    costPerDay,
     status,
-    createdAt,
-    imageUrl,
-    totalBookings,
-    totalViews,
+    vehicle_class,
+    fuel_type,
+    transmission,
+    current_odometer,
+    with_driver_only,
+    category_id,
+    branch_id,
+    created_at,
   } = car;
 
-  return(
+  const statusOption = VEHICLE_STATUS_OPTIONS.find((option) => option.value === status);
+  const categoryLabel = categories?.find((item) => item.id === category_id)?.label;
+  const branchLabel = branches?.find((item) => item.id === branch_id)?.label;
+
+  return (
     <>
       <Stack component={Card} direction="row">
         <Stack
@@ -54,31 +74,30 @@ export default function PostItemHorizontal({ car }) {
           }}
         >
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-            <Label
-              variant="soft"
-              color={(status === 'available' && 'success') || (status === 'unavailable' && 'error') || 'default'}
-            >
-              {status}
+            <Label variant="soft" color={statusOption?.color || 'default'}>
+              {statusOption?.label || status}
             </Label>
 
             <Box component="span" sx={{ typography: 'caption', color: 'text.disabled' }}>
-              {fDate(createdAt)}
+              {fDate(created_at)}
             </Box>
           </Stack>
 
           <Stack spacing={1} flexGrow={1}>
             <Link
               color="inherit"
-              onClick={() => router.push(paths.dashboard.car.details(car._id))}
+              onClick={() => router.push(paths.dashboard.car.details(vehicle_id))}
               sx={{ cursor: 'pointer' }}
             >
               <TextMaxLine variant="subtitle2" line={2}>
-                {brand} {model} ({year})
+                {make} {model} {year ? `(${year})` : ''}
               </TextMaxLine>
             </Link>
 
             <TextMaxLine variant="body2" sx={{ color: 'text.secondary' }}>
-              Charge per day: ${costPerDay}
+              {registration_no}
+              {categoryLabel ? ` · ${categoryLabel}` : ''}
+              {branchLabel ? ` · ${branchLabel}` : ''}
             </TextMaxLine>
           </Stack>
 
@@ -98,15 +117,31 @@ export default function PostItemHorizontal({ car }) {
                 color: 'text.disabled',
               }}
             >
-              <Stack direction="row" alignItems="center">
-                <Iconify icon="solar:calendar-bold" width={16} sx={{ mr: 0.5 }} />
-                {fShortenNumber(totalBookings)} bookings
-              </Stack>
+              {!!fuel_type && (
+                <Stack direction="row" alignItems="center">
+                  <Iconify icon="mdi:gas-station" width={16} sx={{ mr: 0.5 }} />
+                  {fuel_type}
+                </Stack>
+              )}
+
+              {!!transmission && (
+                <Stack direction="row" alignItems="center">
+                  <Iconify icon="mdi:car-shift-pattern" width={16} sx={{ mr: 0.5 }} />
+                  {transmission}
+                </Stack>
+              )}
 
               <Stack direction="row" alignItems="center">
-                <Iconify icon="solar:eye-bold" width={16} sx={{ mr: 0.5 }} />
-                {fShortenNumber(totalViews)} views
+                <Iconify icon="mdi:counter" width={16} sx={{ mr: 0.5 }} />
+                {current_odometer ?? 0} km
               </Stack>
+
+              {with_driver_only && (
+                <Stack direction="row" alignItems="center">
+                  <Iconify icon="mdi:account-tie" width={16} sx={{ mr: 0.5 }} />
+                  With driver
+                </Stack>
+              )}
             </Stack>
           </Stack>
         </Stack>
@@ -116,17 +151,20 @@ export default function PostItemHorizontal({ car }) {
             sx={{
               width: 180,
               height: 240,
-              position: 'relative',
               flexShrink: 0,
-              p: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: 'background.neutral',
+              borderRadius: 1.5,
+              m: 1,
             }}
           >
-            <Avatar
-              alt={brand}
-              src={imageUrl}
-              sx={{ position: 'absolute', top: 16, right: 16, zIndex: 9 }}
+            <Iconify
+              icon={VEHICLE_CLASS_ICONS[vehicle_class] || 'mdi:car'}
+              width={72}
+              sx={{ color: 'text.disabled' }}
             />
-            <Image alt={name} src={imageUrl} sx={{ height: 1, borderRadius: 1.5 }} />
           </Box>
         )}
       </Stack>
@@ -140,7 +178,7 @@ export default function PostItemHorizontal({ car }) {
         <MenuItem
           onClick={() => {
             popover.onClose();
-            router.push(paths.dashboard.car.details(car._id));
+            router.push(paths.dashboard.car.details(vehicle_id));
           }}
         >
           <Iconify icon="solar:eye-bold" />
@@ -150,162 +188,32 @@ export default function PostItemHorizontal({ car }) {
         <MenuItem
           onClick={() => {
             popover.onClose();
-            router.push(paths.dashboard.car.edit(car._id));
+            router.push(paths.dashboard.car.edit(vehicle_id));
           }}
         >
           <Iconify icon="solar:pen-bold" />
           Edit
         </MenuItem>
-
-        <MenuItem
-          onClick={() => {
-            popover.onClose();
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <Iconify icon="solar:trash-bin-trash-bold" />
-          Delete
-        </MenuItem>
       </CustomPopover>
     </>
-  )
-
-  // return (
-  //   <>
-  //     <Stack component={Card} direction="row">
-  //       <Stack
-  //         sx={{
-  //           p: (theme) => theme.spacing(3, 3, 2, 3),
-  //         }}
-  //       >
-  //         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-  //           <Label variant="soft" color={(publish === 'published' && 'info') || 'default'}>
-  //             {publish}
-  //           </Label>
-
-  //           <Box component="span" sx={{ typography: 'caption', color: 'text.disabled' }}>
-  //             {fDate(createdAt)}
-  //           </Box>
-  //         </Stack>
-
-  //         <Stack spacing={1} flexGrow={1}>
-  //           <Link color="inherit" component={RouterLink} href={paths.dashboard.post.details(title)}>
-  //             <TextMaxLine variant="subtitle2" line={2}>
-  //               {title}
-  //             </TextMaxLine>
-  //           </Link>
-
-  //           <TextMaxLine variant="body2" sx={{ color: 'text.secondary' }}>
-  //             {description}
-  //           </TextMaxLine>
-  //         </Stack>
-
-  //         <Stack direction="row" alignItems="center">
-  //           <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-  //             <Iconify icon="eva:more-horizontal-fill" />
-  //           </IconButton>
-
-  //           <Stack
-  //             spacing={1.5}
-  //             flexGrow={1}
-  //             direction="row"
-  //             flexWrap="wrap"
-  //             justifyContent="flex-end"
-  //             sx={{
-  //               typography: 'caption',
-  //               color: 'text.disabled',
-  //             }}
-  //           >
-  //             <Stack direction="row" alignItems="center">
-  //               <Iconify icon="eva:message-circle-fill" width={16} sx={{ mr: 0.5 }} />
-  //               {fShortenNumber(totalComments)}
-  //             </Stack>
-
-  //             <Stack direction="row" alignItems="center">
-  //               <Iconify icon="solar:eye-bold" width={16} sx={{ mr: 0.5 }} />
-  //               {fShortenNumber(totalViews)}
-  //             </Stack>
-
-  //             <Stack direction="row" alignItems="center">
-  //               <Iconify icon="solar:share-bold" width={16} sx={{ mr: 0.5 }} />
-  //               {fShortenNumber(totalShares)}
-  //             </Stack>
-  //           </Stack>
-  //         </Stack>
-  //       </Stack>
-
-  //       {smUp && (
-  //         <Box
-  //           sx={{
-  //             width: 180,
-  //             height: 240,
-  //             position: 'relative',
-  //             flexShrink: 0,
-  //             p: 1,
-  //           }}
-  //         >
-  //           <Avatar
-  //             alt={author.name}
-  //             src={author.avatarUrl}
-  //             sx={{ position: 'absolute', top: 16, right: 16, zIndex: 9 }}
-  //           />
-  //           <Image alt={title} src={coverUrl} sx={{ height: 1, borderRadius: 1.5 }} />
-  //         </Box>
-  //       )}
-  //     </Stack>
-
-  //     <CustomPopover
-  //       open={popover.open}
-  //       onClose={popover.onClose}
-  //       arrow="bottom-center"
-  //       sx={{ width: 140 }}
-  //     >
-  //       <MenuItem
-  //         onClick={() => {
-  //           popover.onClose();
-  //           router.push(paths.dashboard.post.details(title));
-  //         }}
-  //       >
-  //         <Iconify icon="solar:eye-bold" />
-  //         View
-  //       </MenuItem>
-
-  //       <MenuItem
-  //         onClick={() => {
-  //           popover.onClose();
-  //           router.push(paths.dashboard.post.edit(title));
-  //         }}
-  //       >
-  //         <Iconify icon="solar:pen-bold" />
-  //         Edit
-  //       </MenuItem>
-
-  //       <MenuItem
-  //         onClick={() => {
-  //           popover.onClose();
-  //         }}
-  //         sx={{ color: 'error.main' }}
-  //       >
-  //         <Iconify icon="solar:trash-bin-trash-bold" />
-  //         Delete
-  //       </MenuItem>
-  //     </CustomPopover>
-  //   </>
-  // );
+  );
 }
 
 PostItemHorizontal.propTypes = {
-    car: PropTypes.shape({
-    _id: PropTypes.string,
-    name: PropTypes.string,
-    brand: PropTypes.string,
+  car: PropTypes.shape({
+    vehicle_id: PropTypes.string,
+    registration_no: PropTypes.string,
+    make: PropTypes.string,
     model: PropTypes.string,
     year: PropTypes.number,
-    costPerDay: PropTypes.number,
     status: PropTypes.string,
-    createdAt: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
-    imageUrl: PropTypes.string,
-    totalBookings: PropTypes.number,
-    totalViews: PropTypes.number,
+    vehicle_class: PropTypes.string,
+    fuel_type: PropTypes.string,
+    transmission: PropTypes.string,
+    current_odometer: PropTypes.number,
+    with_driver_only: PropTypes.bool,
+    category_id: PropTypes.string,
+    branch_id: PropTypes.string,
+    created_at: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
   }),
 };

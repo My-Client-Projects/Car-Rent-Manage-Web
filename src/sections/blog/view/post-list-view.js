@@ -15,8 +15,9 @@ import { RouterLink } from 'src/routes/components';
 import { useDebounce } from 'src/hooks/use-debounce';
 
 import { POST_SORT_OPTIONS } from 'src/_mock';
-import { CAR_STATUS } from 'src/_mock/_fleetCar';
-import { useGetPosts, useSearchPosts } from 'src/api/blog';
+import { VEHICLE_STATUS_OPTIONS } from 'src/_mock/_vehicle';
+import { useGetVehicles } from 'src/api/vehicle';
+import { useSearchPosts } from 'src/api/blog';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -46,12 +47,12 @@ export default function PostListView() {
 
   const debouncedQuery = useDebounce(searchQuery);
 
-  const { posts, postsLoading } = useGetPosts();
+  const { vehicles, vehiclesLoading } = useGetVehicles();
 
   const { searchResults, searchLoading } = useSearchPosts(debouncedQuery);
 
   const dataFiltered = applyFilter({
-    inputData: posts,
+    inputData: vehicles,
     filters,
     sortBy,
   });
@@ -102,7 +103,7 @@ export default function PostListView() {
             variant="contained"
             startIcon={<Iconify icon="mingcute:add-line" />}
           >
-            Add New Car
+            Add New Vehicle
           </Button>
         }
         sx={{
@@ -124,7 +125,7 @@ export default function PostListView() {
           results={searchResults}
           onSearch={handleSearch}
           loading={searchLoading}
-          hrefItem={(title) => paths.dashboard.post.details(title)}
+          hrefItem={(id) => paths.dashboard.post.details(id)}
         />
 
         <PostSort sort={sortBy} onSort={handleSortBy} sortOptions={POST_SORT_OPTIONS} />
@@ -137,26 +138,18 @@ export default function PostListView() {
           mb: { xs: 3, md: 5 },
         }}
       >
-        {CAR_STATUS.map((tab) => (
+        {VEHICLE_STATUS_OPTIONS.map((tab) => (
           <Tab
-            key={tab}
+            key={tab.value}
             iconPosition="end"
-            value={tab}
-            label={tab}
+            value={tab.value}
+            label={tab.label}
             icon={
               <Label
-                variant={((tab === 'available' || tab === filters.status) && 'filled') || 'soft'}
-                color={(tab === 'available' && 'success') || (tab === 'not available' && 'info') || (tab === 'booked' && 'error') || (tab === 'maintenance' && 'warning') || 'default'}
+                variant={(tab.value === filters.status && 'filled') || 'soft'}
+                color={tab.color}
               >
-                {/* {tab === 'available' && posts.length} */}
-
-                {tab === 'available' && posts.filter((post) => post.status === 'available').length}
-
-                {tab === 'booked' && posts.filter((post) => post.status === 'booked').length}
-
-                {tab === 'maintenance' && posts.filter((post) => post.status === 'maintenance').length}
-
-                {tab === 'not available' && posts.filter((post) => post.status === 'notavailable').length}
+                {vehicles.filter((vehicle) => vehicle.status === tab.value).length}
               </Label>
             }
             sx={{ textTransform: 'capitalize' }}
@@ -164,7 +157,7 @@ export default function PostListView() {
         ))}
       </Tabs>
 
-      <PostListHorizontal posts={dataFiltered} loading={postsLoading} />
+      <PostListHorizontal posts={dataFiltered} loading={vehiclesLoading} />
     </Container>
   );
 }
@@ -176,19 +169,15 @@ const applyFilter = ({ inputData, filters, sortBy }) => {
   const { status  } = filters;
 
   if (sortBy === 'latest') {
-    inputData = orderBy(inputData, ['createdAt'], ['desc']);
+    inputData = orderBy(inputData, ['created_at'], ['desc']);
   }
 
   if (sortBy === 'oldest') {
-    inputData = orderBy(inputData, ['createdAt'], ['asc']);
-  }
-
-  if (sortBy === 'popular') {
-    inputData = orderBy(inputData, ['totalViews'], ['desc']);
+    inputData = orderBy(inputData, ['created_at'], ['asc']);
   }
 
   if (status) {
-    inputData = inputData.filter((post) => post.status === status);
+    inputData = inputData.filter((vehicle) => vehicle.status === status);
   }
 
   return inputData;
