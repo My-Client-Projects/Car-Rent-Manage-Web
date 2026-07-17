@@ -55,7 +55,7 @@ export default function OverviewAppView() {
 
         <Grid xs={12} md={4}>
           <AppWidgetSummary
-            title="Total Active Users"
+            title="Total Bookings"
             percent={2.6}
             total={18765}
             chart={{
@@ -66,7 +66,7 @@ export default function OverviewAppView() {
 
         <Grid xs={12} md={4}>
           <AppWidgetSummary
-            title="Total Installed"
+            title="Total Active Bookings"
             percent={0.2}
             total={4876}
             chart={{
@@ -78,7 +78,7 @@ export default function OverviewAppView() {
 
         <Grid xs={12} md={4}>
           <AppWidgetSummary
-            title="Total Downloads"
+            title="Finished Bookings"
             percent={-0.1}
             total={678}
             chart={{
@@ -90,7 +90,7 @@ export default function OverviewAppView() {
 
         <Grid xs={12} md={6} lg={4}>
           <AppCurrentDownload
-            title="Current Download"
+            title="Vehical Usage"
             chart={{
               series: [
                 { label: 'Mac', value: 12244 },
@@ -104,7 +104,7 @@ export default function OverviewAppView() {
 
         <Grid xs={12} md={6} lg={8}>
           <AppAreaInstalled
-            title="Area Installed"
+            title="Booking Overview"
             subheader="(+43%) than last year"
             chart={{
               categories: [

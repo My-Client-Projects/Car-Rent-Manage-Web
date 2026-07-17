@@ -1,7 +1,7 @@
 'use client';
 
 import * as Yup from 'yup';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -24,11 +24,23 @@ import { PATH_AFTER_LOGIN } from 'src/config-global';
 
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import { useMetadataContext } from 'src/metadata/hooks';
 
 // ----------------------------------------------------------------------
 
+const MODERATOR_ROLES = [      
+      "super_admin",
+      "branch_manager",
+      "booking_agent",
+      "finance_officer",
+      "operations_staff"
+    ]
+
 export default function JwtLoginView() {
-  const { login } = useAuthContext();
+  const { login, user } = useAuthContext();
+
+  const { get_metadata } = useMetadataContext();
+
 
   const router = useRouter();
 
@@ -39,6 +51,16 @@ export default function JwtLoginView() {
   const returnTo = searchParams.get('returnTo');
 
   const password = useBoolean();
+
+
+  useEffect(() => {
+    if (
+      user &&
+      user.role_names?.some(role => MODERATOR_ROLES.includes(role))
+    ) {
+      get_metadata();
+    }
+  }, [user]);
 
   const LoginSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email must be a valid email address'),

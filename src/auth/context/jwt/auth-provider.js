@@ -163,11 +163,11 @@ export function AuthProvider({ children }) {
     dispatch({
       type: 'LOGIN',
       payload: {
-          refresh_token,
-          access_token,
-          token_type,
-          expires_in,
-          user
+          refresh_token:refresh_token,
+          access_token: access_token,
+          token_type: token_type,
+          expires_in: expires_in,
+          user: user
       },
     });
   }, []);

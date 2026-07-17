@@ -13,9 +13,11 @@ import NavMini from './nav-mini';
 import NavVertical from './nav-vertical';
 import NavHorizontal from './nav-horizontal';
 
+
 // ----------------------------------------------------------------------
 
 export default function DashboardLayout({ children }) {
+
   const settings = useSettingsContext();
 
   const lgUp = useResponsive('up', 'lg');

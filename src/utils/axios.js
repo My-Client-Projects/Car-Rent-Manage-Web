@@ -29,6 +29,9 @@ export const endpoints = {
   chat: '/api/chat',
   kanban: '/api/kanban',
   calendar: '/api/calendar',
+  metadata:{
+    get_metadata: '/api/v1/metadata/get-metadata',
+  },
   auth: {
     refresh: '/api/v1/auth/refresh',
     me: '/api/v1/auth/me',
@@ -53,6 +56,13 @@ export const endpoints = {
   },
 
   car: {
+    add: '/api/v1/fleet/vehicles',
+    list: '/api/v1/fleet/vehicles',
+    details: '/api/v1/fleet/vehicles',
+    update: '/api/v1/fleet/vehicles',
+    search: '/api/car/search',
+  },
+  fleet: {
     add: '/api/v1/fleet/vehicles',
     list: '/api/v1/fleet/vehicles',
     details: '/api/v1/fleet/vehicles',
